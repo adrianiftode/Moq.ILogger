@@ -1,0 +1,39 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 15.0.26124.0
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Moq.ILogger", "src\Moq.ILogger\Moq.ILogger.csproj", "{BC14E6A8-E887-40FB-BB5E-55F551AD72DB}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{CB0C6A2D-CFFA-451F-81DD-2F7DCDE8FFA4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{A8F01D1C-8E6A-470A-86AF-02594A5B0E41}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Moq.ILogger.Tests", "tests\Moq.ILogger.Tests\Moq.ILogger.Tests.csproj", "{86148011-9B40-4CB9-A784-BFF357392588}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BC14E6A8-E887-40FB-BB5E-55F551AD72DB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BC14E6A8-E887-40FB-BB5E-55F551AD72DB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BC14E6A8-E887-40FB-BB5E-55F551AD72DB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BC14E6A8-E887-40FB-BB5E-55F551AD72DB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{86148011-9B40-4CB9-A784-BFF357392588}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{86148011-9B40-4CB9-A784-BFF357392588}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{86148011-9B40-4CB9-A784-BFF357392588}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{86148011-9B40-4CB9-A784-BFF357392588}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BC14E6A8-E887-40FB-BB5E-55F551AD72DB} = {CB0C6A2D-CFFA-451F-81DD-2F7DCDE8FFA4}
+		{86148011-9B40-4CB9-A784-BFF357392588} = {A8F01D1C-8E6A-470A-86AF-02594A5B0E41}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8316907E-E899-4303-8681-48BE411933B1}
+	EndGlobalSection
+EndGlobal
