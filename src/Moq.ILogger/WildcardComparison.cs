@@ -7,12 +7,12 @@ namespace Moq.Internal
     {
         internal static bool IsWildcardMatch(this string source, string wildcard)
         {
-            if (source == null)
+            if (string.IsNullOrEmpty(source))
             {
                 throw new ArgumentException("Source cannot be null or an empty string.", nameof(source));
             }
 
-            if (wildcard == null)
+            if (string.IsNullOrEmpty(wildcard))
             {
                 throw new ArgumentException("Wildcard cannot be null or an empty string.", nameof(wildcard));
             }
