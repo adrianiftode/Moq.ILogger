@@ -5,7 +5,7 @@ This is a [*Moq*](https://github.com/Moq/moq4/wiki/Quickstart) extension for *IL
 
 [![Build status](https://ci.appveyor.com/api/projects/status/iixn0pkeuuov1rwb/branch/master?svg=true)](https://ci.appveyor.com/project/adrianiftode/moq-ilogger/branch/master)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Moq.ILogger&metric=alert_status)](https://sonarcloud.io/dashboard?id=Moq.ILogger)
-[![NuGet](https://img.shields.io/nuget/v/ILogger.Mock.svg)](https://www.nuget.org/packages/ILogger.Mock)
+[![NuGet](https://img.shields.io/nuget/v/ILogger.Moq.svg)](https://www.nuget.org/packages/ILogger.Moq)
 
 ## Nuget
 This package is stil in preview mode
@@ -67,7 +67,10 @@ public void Verify_errors()
 }
 ```
 
-##Why
+## Why
+Moq cannot verify extension methods calls so you'll have to check the extension implementation and see what is actually called.
+You would get an error like the following.
+This package translate the `VerifyLog` expression into an Moq `Verify` expression that it can understand accordingly the 
 ```
   Message: 
     System.NotSupportedException : Invalid verify on an extension method: logger => logger.LogInformation("User is not authorized {user}", new[] {  })
