@@ -5,12 +5,12 @@ using Xunit;
 // ReSharper disable once CheckNamespace
 namespace Moq.Tests
 {
-    public class LoggerMockExceptionTests
+    public class VerifyLogExceptionTests
     {
         [Fact]
         public void Ctor_DoesNotThrow()
         {
-            Action act = () => new LoggerMockException();
+            Action act = () => new VerifyLogException();
 
             act.Should().NotThrow();
         }
@@ -18,7 +18,7 @@ namespace Moq.Tests
         [Fact]
         public void Ctor_WhenMessage_DoesNotThrow()
         {
-            Action act = () => new LoggerMockException("Some message");
+            Action act = () => new VerifyLogException("Some message");
 
             act.Should().NotThrow();
         }
@@ -26,7 +26,7 @@ namespace Moq.Tests
         [Fact]
         public void Ctor_WhenInnerException_DoesNotThrow()
         {
-            Action act = () => new LoggerMockException("Some message", new Exception());
+            Action act = () => new VerifyLogException("Some message", new Exception());
 
             act.Should().NotThrow();
         }
@@ -34,7 +34,7 @@ namespace Moq.Tests
         [Fact]
         public void Exception_ShouldBeBinarySerializable()
         {
-            var sut = new LoggerMockException("Some message", new Exception());
+            var sut = new VerifyLogException("Some message", new Exception());
 
             sut.Should().BeBinarySerializable();
         }

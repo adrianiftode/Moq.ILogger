@@ -6,22 +6,24 @@ using System.Linq.Expressions;
 // ReSharper disable once CheckNamespace
 namespace Moq
 {
-    internal class LogArgsExpressions
+    internal class VerifyLogArgsExpressions
     {
+        public VerifyLogArgs LogArgs { get; private set; }
         public Expression Message { get; private set; }
         public Expression Exception { get; private set; }
         public Expression EventId { get; private set; }
         public Expression MessageArgs { get; private set; }
 
-        public static LogArgsExpressions From(Expression expression)
+        public static VerifyLogArgsExpressions From(Expression expression)
         {
             var methodCall = (MethodCallExpression)((LambdaExpression)expression).Body;
-            return new LogArgsExpressions
+            return new VerifyLogArgsExpressions
             {
                 Exception = methodCall.Arguments.FirstOrDefault(c => typeof(Exception).IsAssignableFrom(c.Type)),
                 EventId = methodCall.Arguments.FirstOrDefault(c => c.Type == typeof(EventId)),
                 Message = methodCall.Arguments.FirstOrDefault(c => c.Type == typeof(string)),
-                MessageArgs = methodCall.Arguments.FirstOrDefault(c => c.Type == typeof(object[]))
+                MessageArgs = methodCall.Arguments.FirstOrDefault(c => c.Type == typeof(object[])),
+                LogArgs = VerifyLogArgs.From(expression)
             };
         }
     }

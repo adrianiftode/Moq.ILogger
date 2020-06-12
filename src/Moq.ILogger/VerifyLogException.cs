@@ -8,12 +8,12 @@ namespace Moq
     /// Encapsulates Moq exceptions and provides extra instructions
     /// </summary>
     [Serializable]
-    public class LoggerMockException : Exception
+    public class VerifyLogException : Exception
     {
         /// <summary>
         /// Default LoggerMockException constructor
         /// </summary>
-        public LoggerMockException()
+        public VerifyLogException()
         {
         }
 
@@ -21,7 +21,7 @@ namespace Moq
         /// LoggerMockException constructor from a string message
         /// </summary>
         /// <param name="message">The exception message</param>
-        public LoggerMockException(string message) : base(message)
+        public VerifyLogException(string message) : base(message)
         {
         }
 
@@ -30,7 +30,7 @@ namespace Moq
         /// </summary>
         /// <param name="message">The exception message</param>
         /// <param name="innerException">The inner exception message</param>
-        public LoggerMockException(string message, Exception innerException) : base(message, innerException)
+        public VerifyLogException(string message, Exception innerException) : base(message, innerException)
         {
         }
 
@@ -39,7 +39,7 @@ namespace Moq
         /// </summary>
         /// <param name="info">Serialization info</param>
         /// <param name="context">Serialization context</param>
-        protected LoggerMockException(SerializationInfo info, StreamingContext context) : base(info, context)
+        protected VerifyLogException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

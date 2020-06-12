@@ -11,7 +11,7 @@ namespace Moq
     /// <summary>
     /// Encapsulates a collection of extensions methods over Mock ILogger in order to define Moq Verify calls over the ILogger extensions
     /// </summary>
-    public static class MoqILoggerExtensions
+    public static class VerifyLogExtensions
     {
         private const string NullMessageFormatted = "[null]";
 
@@ -20,19 +20,22 @@ namespace Moq
         /// </summary>
         /// <param name="loggerMock">The ILogger mock object.</param>
         /// <param name="expression">Expression to verify.</param>
-        /// <exception cref="LoggerMockException">
+        /// <exception cref="VerifyLogException">
         /// The invocation was not performed on the mock.
         /// </exception>
         public static void VerifyLog(this Mock<ILogger> loggerMock, Expression<Action<ILogger>> expression)
         {
-            var verifyExpression = CreateMoqVerifyExpressionFrom<ILogger>(expression);
+            EnsureExpressionIsForLoggerExtensions(expression);
+
+            var logArgsExpressions = VerifyLogArgsExpressions.From(expression);
+            var verifyExpression = CreateMoqVerifyExpressionFrom<ILogger>(logArgsExpressions);
             try
             {
                 loggerMock.Verify(verifyExpression);
             }
             catch (MockException ex)
             {
-                throw new LoggerMockException(BuildExceptionMessage(ex, expression), ex);
+                throw new VerifyLogException(BuildExceptionMessage(ex, expression, logArgsExpressions.LogArgs), ex);
             }
         }
 
@@ -41,29 +44,33 @@ namespace Moq
         /// </summary>
         /// <param name="loggerMock">The generic ILogger mock object.</param>
         /// <param name="expression">Expression to verify.</param>
-        /// <exception cref="LoggerMockException">
+        /// <exception cref="VerifyLogException">
         /// The invocation was not performed on the mock.
         /// </exception>
         public static void VerifyLog<T>(this Mock<ILogger<T>> loggerMock, Expression<Action<ILogger>> expression)
         {
-            var verifyExpression = CreateMoqVerifyExpressionFrom<ILogger<T>>(expression);
+            EnsureExpressionIsForLoggerExtensions(expression);
+
+            var logArgs = VerifyLogArgs.From(expression);
+            var logArgsExpressions = VerifyLogArgsExpressions.From(expression);
+            var verifyExpression = CreateMoqVerifyExpressionFrom<ILogger<T>>(logArgsExpressions);
             try
             {
                 loggerMock.Verify(verifyExpression);
             }
             catch (MockException ex)
             {
-                throw new LoggerMockException(BuildExceptionMessage(ex, expression), ex);
+                throw new VerifyLogException(BuildExceptionMessage(ex, expression, logArgs), ex);
             }
         }
 
-        private static Expression<Action<T>> CreateMoqVerifyExpressionFrom<T>(Expression expression)
+        private static Expression<Action<T>> CreateMoqVerifyExpressionFrom<T>(VerifyLogArgsExpressions logArgsExpressions)
         {
-            var logLevelExpression = CreateLogLevelExpression(expression);
-            var eventIdExpression = CreateEventIdExpression(expression);
-            var exceptionExpression = CreateExceptionExpression(expression);
-            var messageExpression = CreateMessageExpression(expression);
-            var formatterExpression = CreateFormatterExpression(exceptionExpression);
+            var logLevelExpression = CreateLogLevelExpression(logArgsExpressions.LogArgs);
+            var eventIdExpression = CreateEventIdExpression();
+            var exceptionExpression = CreateExceptionExpression(logArgsExpressions.LogArgs, logArgsExpressions);
+            var messageExpression = CreateMessageExpression(logArgsExpressions);
+            var formatterExpression = CreateFormatterExpression();
 
             var loggerParameter = Expression.Parameter(typeof(T), "logger");
             var logMethodInfo = typeof(ILogger).GetMethod(nameof(ILogger.Log)).MakeGenericMethod(typeof(It.IsAnyType));
@@ -78,38 +85,32 @@ namespace Moq
             return verifyExpression;
         }
 
-        private static Expression CreateLogLevelExpression(Expression expression)
-        {
-            var args = LogArgs.From(expression);
-            var logLevel = args.LogLevel;
-            return Expression.Constant(logLevel);
-        }
+        private static Expression CreateLogLevelExpression(VerifyLogArgs args) 
+            => Expression.Constant(args.LogLevel);
 
-        private static Expression CreateFormatterExpression(Expression expression)
+        private static Expression CreateFormatterExpression()
         {
             var itIsAnyObjectExpression = BuildItIsAnyExpression<object>();
             var formatterExpression = Expression.Convert(itIsAnyObjectExpression, typeof(Func<It.IsAnyType, Exception, string>));
             return formatterExpression;
         }
 
-        private static Expression CreateEventIdExpression(Expression expression)
+        private static Expression CreateEventIdExpression()
             => BuildItIsAnyExpression<EventId>();
 
-        private static Expression CreateExceptionExpression(Expression expression)
+        private static Expression CreateExceptionExpression(VerifyLogArgs args, VerifyLogArgsExpressions expressions)
         {
-            var expressions = LogArgsExpressions.From(expression);
             if (expressions.Exception == null)
             {
                 return BuildItIsAnyExpression<Exception>();
             }
 
-            var args = LogArgs.From(expression);
             if (args.Exception != null)
             {
                 // build It.Is(CompareExceptions(exception)),
                 var exceptionParam = Expression.Parameter(typeof(Exception));
                 var exceptionConstantExpression = Expression.Constant(args.Exception, typeof(Exception));
-                var compareExceptionsCallExpression = Expression.Call(typeof(MoqILoggerExtensions), nameof(CompareExceptions), null, exceptionConstantExpression, exceptionParam);
+                var compareExceptionsCallExpression = Expression.Call(typeof(VerifyLogExtensions), nameof(CompareExceptions), null, exceptionConstantExpression, exceptionParam);
                 var compareExpression = Expression.Lambda<Func<Exception, bool>>(compareExceptionsCallExpression, exceptionParam);
                 var compareExceptionQuoteExpression = Expression.Quote(compareExpression);
                 var itIsExceptionExpression = Expression.Call(typeof(It), "Is", new[] { typeof(Exception) }, compareExceptionQuoteExpression);
@@ -119,9 +120,9 @@ namespace Moq
             return expressions.Exception ?? BuildItIsAnyExpression<Exception>();
         }
 
-        private static MethodCallExpression CreateMessageExpression(Expression expression)
+        private static MethodCallExpression CreateMessageExpression(VerifyLogArgsExpressions logArgsExpressions)
         {
-            var messageArg = LogArgsExpressions.From(expression).Message;
+            var messageArg = logArgsExpressions.Message;
 
             var vParam = Expression.Parameter(typeof(object), "v");
             var tParam = Expression.Parameter(typeof(Type), "t");
@@ -131,7 +132,7 @@ namespace Moq
             if (messageArg is ConstantExpression messageArgConstant)
             {
                 var messageConstantExpression = Expression.Constant(messageArgConstant.Value, typeof(string));
-                var compareMessagesCallExpression = Expression.Call(typeof(MoqILoggerExtensions), nameof(CompareMessages), null, messageConstantExpression, vParam);
+                var compareMessagesCallExpression = Expression.Call(typeof(VerifyLogExtensions), nameof(CompareMessages), null, messageConstantExpression, vParam);
                 compareExpression = Expression.Lambda<Func<object, Type, bool>>(compareMessagesCallExpression, vParam, tParam);
             }
             else if (messageArg is MethodCallExpression methodCallExpression)
@@ -179,6 +180,41 @@ namespace Moq
             return itIsMessageExpression;
         }
 
+        private static void EnsureExpressionIsForLoggerExtensions(Expression expression)
+        {
+            var methodCall = (expression as LambdaExpression)?.Body as MethodCallExpression;
+            var methodIsaMsLoggerExtensions = methodCall?.Method.ReflectedType == typeof(LoggerExtensions);
+            var methodName = methodCall?.Method.Name;
+            var supportedMethods = new[]
+            {
+                nameof(LoggerExtensions.LogCritical),
+                nameof(LoggerExtensions.LogDebug),
+                nameof(LoggerExtensions.LogError),
+                nameof(LoggerExtensions.LogInformation),
+                nameof(LoggerExtensions.LogWarning),
+                nameof(LoggerExtensions.LogTrace)
+            };
+
+            if (!methodIsaMsLoggerExtensions || methodName is null || !supportedMethods.Contains(methodName))
+            {
+                var message = "Moq.ILogger supports only the extensions " +
+                              "defined in the Microsoft.Extensions.Logging package " +
+                              "and that are specifically defined for " +
+                              $"LogXXX use cases ({string.Join(", ", supportedMethods)}).";
+
+                if (!string.IsNullOrEmpty(methodName))
+                {
+                    message += $" The resolved method `{methodName}` in the verify expression is not one of these.";
+                }
+                else
+                {
+                    message += " A method name could not be resolved from the verify expression.";
+                }
+
+                throw new NotSupportedException(message);
+            }
+        }
+
         private static bool CompareExceptions(Exception exceptionA, Exception exceptionB)
         {
             if (exceptionA == null || exceptionB == null)
@@ -210,11 +246,10 @@ namespace Moq
         }
 
         private static Expression BuildItIsAnyExpression<T>()
-            => Expression.Call(typeof(It), "IsAny", new Type[] { typeof(T) });
+            => Expression.Call(typeof(It), "IsAny", new[] { typeof(T) });
 
-        private static string BuildExceptionMessage(MockException ex, Expression expression)
+        private static string BuildExceptionMessage(MockException ex, Expression expression, VerifyLogArgs args)
         {
-            var args = LogArgs.From(expression);
             return BuildExceptionMessage(ex, args.LogLevel, args.Message);
         }
 
