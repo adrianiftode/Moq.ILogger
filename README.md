@@ -70,7 +70,7 @@ public void Verify_errors()
 ## Why
 Moq cannot verify extension methods calls so you'll have to check the extension implementation and see what is actually called.
 You would get an error like the following.
-This package translate the `VerifyLog` expression into an Moq `Verify` expression that it can understand accordingly the 
+This package translates the given `VerifyLog` expression into one that Moq can use to verify the `ILogger.Log` signature.
 ```
   Message: 
     System.NotSupportedException : Invalid verify on an extension method: logger => logger.LogInformation("User is not authorized {user}", new[] {  })
