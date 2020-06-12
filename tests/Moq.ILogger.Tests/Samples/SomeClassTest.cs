@@ -3,7 +3,7 @@ using Moq;
 using System;
 using Xunit;
 
-namespace Moq.Samples.Tests
+namespace Moq.Tests.Samples
 {
     public class SomeClass
     {
