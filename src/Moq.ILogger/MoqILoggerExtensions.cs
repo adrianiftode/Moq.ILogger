@@ -8,152 +8,102 @@ using System.Text.RegularExpressions;
 
 namespace Moq
 {
+
     public static class MoqILoggerExtensions
     {
         private const string NullMessageFromatted = "[null]";
 
-        public static void Verify(this Mock<ILogger> loggerMock, LogLevel logLevel, string message)
-        {
-            try
-            {
-                loggerMock.Verify(logger =>
-                                 logger.Log(logLevel,
-                                        It.IsAny<EventId>(),
-                                        It.Is<It.IsAnyType>((v, t) => CompareMessages(message, v)),
-                                        It.IsAny<Exception>(),
-                                        (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())
-                );
-            }
-            catch (MockException ex)
-            {
-                throw new ILoggerMockException(
-
-                    $"Expected an invocation on the .Log{logLevel}(\"{message}\"), but was never performed." +
-                    $"{Environment.NewLine}" +
-                    $"{Environment.NewLine}" +
-                    $"{ex}", ex);
-            }
-        }
-
-        public static void Verify(this Mock<ILogger> loggerMock, LogLevel logLevel, Exception exception, string message)
-        {
-            try
-            {
-                Expression<Action<ILogger>> expression = logger => logger.Log(logLevel,
-                                                           It.IsAny<EventId>(),
-                                                           It.Is<It.IsAnyType>((v, t) => CompareMessages(message, v)),
-                                                           It.Is(CompareExceptions(exception)),
-                                                           (Func<It.IsAnyType, Exception, string>)It.IsAny<object>());
-                loggerMock.Verify(expression);
-            }
-            catch (MockException ex)
-            {
-                throw new ILoggerMockException(
-
-                    $"Expected an invocation on the .Log{logLevel}(\"{message}\"), but was never performed." +
-                    $"{Environment.NewLine}" +
-                    $"{Environment.NewLine}" +
-                    $"{ex}", ex);
-            }
-        }
-
         public static void VerifyLog(this Mock<ILogger> loggerMock, Expression<Action<ILogger>> expression)
         {
-            var loggerParameter = Expression.Parameter(typeof(ILogger), "logger");
-            var message = GetMessage(expression);
-            var logLevel = GetLogLevel(expression);
-            var logLevelExpression = Expression.Constant(logLevel);
-
-            var itIsAnyEventIdExpression = Expression.Call(typeof(It), "IsAny", new Type[] { typeof(EventId) });
-            var itIsAnyExceptionExpression = Expression.Call(typeof(It), "IsAny", new Type[] { typeof(Exception) });
-            var exceptionExpression = GetExceptionExpression(expression);
-            var messageExpression = CreateMessageExpression(expression);
-            var itIsAnyObjectExpression = Expression.Call(typeof(It), "IsAny", new Type[] { typeof(object) });
-            var formatterExpression = Expression.Convert(itIsAnyObjectExpression, typeof(Func<It.IsAnyType, Exception, string>));
-
-
-            var logMethodInfo = typeof(ILogger).GetMethod("Log").MakeGenericMethod(typeof(It.IsAnyType));
-            var logCallExpression = Expression.Call(loggerParameter, logMethodInfo,
-                logLevelExpression,
-                itIsAnyEventIdExpression,
-                messageExpression,
-                exceptionExpression ?? itIsAnyExceptionExpression,
-                formatterExpression
-                );
-            Expression<Action<ILogger>> verifyExpression = Expression.Lambda<Action<ILogger>>(logCallExpression, loggerParameter);
+            var verifyExpression = CreateMoqVerifyExpressionFrom<ILogger>(expression);
             try
             {
                 loggerMock.Verify(verifyExpression);
             }
             catch (MockException ex)
             {
-                throw new ILoggerMockException(
-
-                    $"Expected an invocation on the .Log{logLevel}(\"{message}\"), but was never performed." +
-                    $"{Environment.NewLine}" +
-                    $"{Environment.NewLine}" +
-                    $"{ex}", ex);
+                throw new ILoggerMockException(BuildExceptionMessage(ex, expression), ex);
             }
         }
 
-        private class LogArgsExpressions
+        public static void VerifyLog<T>(this Mock<ILogger<T>> loggerMock, Expression<Action<ILogger>> expression)
         {
-            public Expression Message { get; set; }
-            public Expression Exception { get; set; }
-            public Expression EventId { get; set; }
-            public Expression Args { get; set; }
-        }
-
-        private static LogArgsExpressions GetLogArgsExpressions(Expression<Action<ILogger>> expression)
-        {
-            var methodCall = (MethodCallExpression)expression.Body;
-            return new LogArgsExpressions
+            var verifyExpression = CreateMoqVerifyExpressionFrom<ILogger<T>>(expression);
+            try
             {
-                Exception = methodCall.Arguments.FirstOrDefault(c => typeof(Exception).IsAssignableFrom(c.Type)),
-                EventId = methodCall.Arguments.FirstOrDefault(c => c.Type == typeof(EventId)),
-                Message = methodCall.Arguments.FirstOrDefault(c => c.Type == typeof(string)),
-                Args = methodCall.Arguments.FirstOrDefault(c => c.Type == typeof(object[]))
-            };
-        }
-
-        private static Expression GetExceptionExpression(Expression<Action<ILogger>> expression)
-        {
-            var methodCall = (MethodCallExpression)expression.Body;
-            var exceptionExpression = methodCall.Arguments.FirstOrDefault(c => typeof(Exception).IsAssignableFrom(c.Type));
-            return exceptionExpression;
-        }
-
-        private static string GetMessage(Expression<Action<ILogger>> expression)
-        {
-            var methodCall = (MethodCallExpression)expression.Body;
-            var messageExpression = methodCall.Arguments.First(c => c.Type == typeof(string)) as ConstantExpression;
-            var message = messageExpression?.Value as string;
-            return message;
-        }
-
-        private static LogLevel GetLogLevel(Expression<Action<ILogger>> expression)
-        {
-            var methodCall = expression.Body as MethodCallExpression;
-            if (methodCall == null)
-            {
-                throw new InvalidOperationException("Only ILogger extensions");
+                loggerMock.Verify(verifyExpression);
             }
-            var name = methodCall.Method.Name;
-            var logLevel = name switch
+            catch (MockException ex)
             {
-                "LogDebug" => LogLevel.Debug,
-                "LogInformation" => LogLevel.Information,
-                "LogWarning" => LogLevel.Warning,
-                "LogError" => LogLevel.Error,
-                "LogTrace" => LogLevel.Trace,
-                _ => throw new InvalidOperationException("Only ILogger extensions"),
-            };
-            return logLevel;
+                throw new ILoggerMockException(BuildExceptionMessage(ex, expression), ex);
+            }
         }
 
-        private static MethodCallExpression CreateMessageExpression(Expression<Action<ILogger>> expression)
+        private static Expression<Action<T>> CreateMoqVerifyExpressionFrom<T>(Expression expression)
         {
-            var messageArg = GetLogArgsExpressions(expression).Message;
+            var logLevelExpression = CreateLogLevelExpression(expression);
+            var eventIdExpression = CreateEventIdExpression(expression);          
+            var exceptionExpression = CreateExceptionExpression(expression);
+            var messageExpression = CreateMessageExpression(expression);
+            var formatterExpression = CreateFormatterExpression(exceptionExpression);
+
+            var loggerParameter = Expression.Parameter(typeof(T), "logger");
+            var logMethodInfo = typeof(ILogger).GetMethod(nameof(ILogger.Log)).MakeGenericMethod(typeof(It.IsAnyType));
+            var logCallExpression = Expression.Call(loggerParameter, logMethodInfo,
+                logLevelExpression,
+                eventIdExpression,
+                messageExpression,
+                exceptionExpression,
+                formatterExpression);
+
+            var verifyExpression = Expression.Lambda<Action<T>>(logCallExpression, loggerParameter);
+            return verifyExpression;
+        }
+
+        private static Expression CreateLogLevelExpression(Expression expression)
+        {
+            var args = LogArgs.From(expression);
+            var logLevel = args.LogLevel;
+            return Expression.Constant(logLevel);
+        }
+
+        private static Expression CreateFormatterExpression(Expression expression)
+        {
+            var itIsAnyObjectExpression = BuildItIsAnyExpression<object>();
+            var formatterExpression = Expression.Convert(itIsAnyObjectExpression, typeof(Func<It.IsAnyType, Exception, string>));
+            return formatterExpression;
+        }
+
+        private static Expression CreateEventIdExpression(Expression expression)
+            => BuildItIsAnyExpression<EventId>();
+
+        private static Expression CreateExceptionExpression(Expression expression)
+        {
+            var expressions = LogArgsExpressions.From(expression);
+            if (expressions.Exception == null)
+            {
+                return BuildItIsAnyExpression<Exception>();
+            }
+
+            var args = LogArgs.From(expression);
+            if (args.Exception != null)
+            {
+                // build It.Is(CompareExceptions(exception)),
+                var exceptionParam = Expression.Parameter(typeof(Exception));
+                var exceptionConstantExpression = Expression.Constant(args.Exception, typeof(Exception));
+                var compareExceptionsCallExpression = Expression.Call(typeof(MoqILoggerExtensions), nameof(CompareExceptions), null, exceptionConstantExpression, exceptionParam);
+                var compareExpression = Expression.Lambda<Func<Exception, bool>>(compareExceptionsCallExpression, exceptionParam);
+                var compareExceptionQuoteExpression = Expression.Quote(compareExpression);
+                var itIsExceptionExpression = Expression.Call(typeof(It), "Is", new Type[] { typeof(Exception) }, compareExceptionQuoteExpression);
+                return itIsExceptionExpression;
+            }
+
+            return expressions.Exception ?? BuildItIsAnyExpression<Exception>();
+        }
+
+        private static MethodCallExpression CreateMessageExpression(Expression expression)
+        {
+            var messageArg = LogArgsExpressions.From(expression).Message;
 
             var vParam = Expression.Parameter(typeof(object), "v");
             var tParam = Expression.Parameter(typeof(Type), "t");
@@ -211,8 +161,21 @@ namespace Moq
             return itIsMessageExpression;
         }
 
-        private static Expression<Func<Exception, bool>> CompareExceptions(Exception exception)
-            => c => c.GetType() == exception.GetType() && c.Message == exception.Message;
+        private static bool CompareExceptions(Exception exceptionA, Exception exceptionB)
+        {
+            if (exceptionA == null || exceptionB == null)
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(exceptionA, exceptionB))
+            {
+                return true;
+            }
+
+            return exceptionA.Message == exceptionB.Message && exceptionA.GetType() == exceptionB.GetType();
+        }
+
         private static bool CompareMessages(string message, object v)
         {
             if (message == null && v.ToString() == NullMessageFromatted)
@@ -227,5 +190,20 @@ namespace Moq
 
             return v.ToString().IsWildcardMatch(message);
         }
+
+        private static Expression BuildItIsAnyExpression<T>()
+            => Expression.Call(typeof(It), "IsAny", new Type[] { typeof(T) });
+
+        private static string BuildExceptionMessage(MockException ex, Expression expression)
+        {
+            var args = LogArgs.From(expression);
+            return BuildExceptionMessage(ex, args.LogLevel, args.Message);
+        }
+
+        private static string BuildExceptionMessage(MockException ex, LogLevel level, string message)
+            => $"Expected an invocation on the .Log{level}(\"{message}\"), but was never performed." +
+                                $"{Environment.NewLine}" +
+                                $"{Environment.NewLine}" +
+                                $"{ex}";
     }
 }

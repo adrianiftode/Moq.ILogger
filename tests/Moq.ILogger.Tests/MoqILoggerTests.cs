@@ -5,9 +5,6 @@ using FluentAssertions;
 
 namespace Moq.Tests
 {
-    public interface IInterface
-    { 
-    }
     public class MoqILoggerTests
     {
         [Fact]
@@ -16,7 +13,7 @@ namespace Moq.Tests
             var loggerMock = new Mock<ILogger>();
             loggerMock.Object.LogInformation("Test message");
 
-            Action act = () => loggerMock.Verify(LogLevel.Information, "Test message");
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test message"));
 
             act.Should().NotThrow();
         }
@@ -27,7 +24,7 @@ namespace Moq.Tests
             var loggerMock = new Mock<ILogger>();
             loggerMock.Object.LogDebug("Test message");
 
-            Action act = () => loggerMock.Verify(LogLevel.Information, "Test message");
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test message"));
 
             act.Should().ThrowExactly<ILoggerMockException>()
                 .WithMessage("*.LogInformation(\"Test message\")*");
@@ -39,7 +36,7 @@ namespace Moq.Tests
             var loggerMock = new Mock<ILogger>();
             loggerMock.Object.LogInformation("Test message");
 
-            Action act = () => loggerMock.Verify(LogLevel.Information, "A different message");
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("A different message"));
 
             act.Should().ThrowExactly<ILoggerMockException>()
                 .WithMessage("*.LogInformation(\"A different message\")*");
@@ -51,7 +48,7 @@ namespace Moq.Tests
             var loggerMock = new Mock<ILogger>();
             loggerMock.Object.LogInformation("Test Message");
 
-            Action act = () => loggerMock.Verify(LogLevel.Information, "Test message");
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test message"));
 
             act.Should().NotThrow();
         }
@@ -62,7 +59,7 @@ namespace Moq.Tests
             var loggerMock = new Mock<ILogger>();
             loggerMock.Object.LogInformation("Test message {0}", 1);
 
-            Action act = () => loggerMock.Verify(LogLevel.Information, "Test message 1");
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test message 1"));
 
             act.Should().NotThrow();
         }
@@ -73,7 +70,7 @@ namespace Moq.Tests
             var loggerMock = new Mock<ILogger>();
             loggerMock.Object.LogInformation("Test message {0}", 1);
 
-            Action act = () => loggerMock.Verify(LogLevel.Information, "Test message 2");
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test message 2"));
 
             act.Should().ThrowExactly<ILoggerMockException>()
                 .WithMessage("*.LogInformation(\"Test message 2\")*");
@@ -85,7 +82,7 @@ namespace Moq.Tests
             var loggerMock = new Mock<ILogger>();
             loggerMock.Object.LogInformation("Test gibberish message");
 
-            Action act = () => loggerMock.Verify(LogLevel.Information, "Test*message");
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test*message"));
 
             act.Should().NotThrow();
         }
@@ -96,7 +93,7 @@ namespace Moq.Tests
             var loggerMock = new Mock<ILogger>();
             loggerMock.Object.LogInformation("Test message with more content");
 
-            Action act = () => loggerMock.Verify(LogLevel.Information, "Test message");
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test message"));
 
             act.Should().ThrowExactly<ILoggerMockException>()
                 .WithMessage("*.LogInformation(\"Test message\")*");
@@ -110,7 +107,7 @@ namespace Moq.Tests
             var elapsedMs = 34;
             loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
 
-            Action act = () => loggerMock.Verify(LogLevel.Information, "Processed { Latitude = 25, Longitude = 134 } in 034 ms.");
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms."));
 
             act.Should().NotThrow();
         }
@@ -123,7 +120,7 @@ namespace Moq.Tests
             var elapsedMs = 34;
             loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
 
-            Action act = () => loggerMock.Verify(LogLevel.Information, "Processed * in * ms.");
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed * in * ms."));
 
             act.Should().NotThrow();
         }
@@ -134,7 +131,7 @@ namespace Moq.Tests
             var loggerMock = new Mock<ILogger>();
             loggerMock.Object.LogWarning(new Exception("Something unexpected happened, but will survive."), "Test message");
 
-            Action act = () => loggerMock.Verify(LogLevel.Warning, new Exception("Something unexpected happened, but will survive."), "Test message");
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogWarning(new Exception("Something unexpected happened, but will survive."), "Test message"));
 
             act.Should().NotThrow();
         }
@@ -160,18 +157,6 @@ namespace Moq.Tests
 
             act.Should().ThrowExactly<ILoggerMockException>()
                 .WithMessage("*.LogWarning(\"Test message\")*Some different message*");
-        }
-
-        [Fact]
-        public void Verify_an_error_against_a_counterpart_it_throws_because_it_cannot_compare_the_exceptions()
-        {
-            var loggerMock = new Mock<ILogger>();
-            loggerMock.Object.LogWarning(new Exception("Some error message."), "Test message");
-
-            Action act = () => loggerMock.VerifyLog(c => c.LogWarning(new Exception("Some error message."), "Test message"));
-
-            act.Should().ThrowExactly<ILoggerMockException>()
-                .WithMessage("*.LogWarning(\"Test message\")*Some error message*");
         }
 
         [Fact]
@@ -286,22 +271,6 @@ namespace Moq.Tests
 
             act.Should().ThrowExactly<ILoggerMockException>()
              .WithMessage("*.LogInformation*");
-        }
-
-        [Theory]
-        [InlineData(LogLevel.Trace)]
-        [InlineData(LogLevel.Debug)]
-        [InlineData(LogLevel.Information)]
-        [InlineData(LogLevel.Warning)]
-        [InlineData(LogLevel.Critical)]
-        public void Verify_log_level_it_verifies(LogLevel logLevel)
-        {
-            var loggerMock = new Mock<ILogger>();
-            loggerMock.Object.Log(logLevel, default, "Some message", null, null);
-
-            Action act = () => loggerMock.Verify(logLevel, "Some message");
-
-            act.Should().NotThrow<ILoggerMockException>();
         }
     }
 }
