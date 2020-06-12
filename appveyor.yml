@@ -34,7 +34,7 @@ after_test:
   - minicover uninstrument
   - minicover opencoverreport
   # will fail when the test coverage is lower than the threshold
-  - minicover report --threshold 95
+  - minicover report --threshold 90
   - ps: 'if (-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) { & dotnet sonarscanner end /d:sonar.login="$env:SONAR_TOKEN" }'
 artifacts:
   path: '**\*.nupkg'
