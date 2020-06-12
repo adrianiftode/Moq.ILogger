@@ -67,9 +67,11 @@ public void Verify_errors()
 }
 ```
 
+Notice the *VerifyLog* method is used and not *Verify*. If you `Verify` instead of `VerifyLog` you will get an Moq exception with the message `Invalid verify on an extension method`.
+
 ## Why
 Moq cannot verify extension methods calls so you'll have to check the extension implementation and see what is actually called.
-You would get an error like the following.
+You would get an error like the one bellow.
 This package translates the given `VerifyLog` expression into one that Moq can use to verify the `ILogger.Log` signature.
 ```
   Message: 
