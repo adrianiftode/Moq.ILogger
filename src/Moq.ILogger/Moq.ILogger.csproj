@@ -7,6 +7,18 @@
     <LangVersion>Latest</LangVersion>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <PackageId>ILogger.Moq</PackageId>
+    <Authors>Adrian Iftode</Authors>
+    <PackageDescription>Verify the SUT interactions with the `ILogger` extensions using all the Moq goodies.</PackageDescription>
+    <PackageTags>Moq;ILogger;ILoggerExtensions;unit;unittest</PackageTags>
+    <VersionPrefix>1.0.0.preview-</VersionPrefix>
+    <PackageProjectUrl>https://github.com/adrianiftode/Moq.ILogger</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/adrianiftode/Moq.ILogger</RepositoryUrl>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Moq" Version="4.13.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions">
