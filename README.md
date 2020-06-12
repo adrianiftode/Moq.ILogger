@@ -5,13 +5,15 @@ Easy verify ILogger mocks
 
 Given the following SUT
 ```csharp
- public class SomeClass
+public class SomeClass
 {
     private readonly ILogger<SomeClass> _logger;
+
     public SomeClass(ILogger<SomeClass> logger) => _logger = logger;
 
     public void LoggingInformation()
         => _logger.LogInformation("This operation is successfull.");
+
     public void LoggingWarning(string name)
         => _logger.LogWarning(new ArgumentException("The given name is not ok", nameof(name)), "This operation failed, but let's log an warning only");
 }

@@ -20,7 +20,7 @@ namespace Moq.Internal
             var pattern = WildcardToRegular(wildcard);
             return Regex.IsMatch(source, pattern, RegexOptions.IgnoreCase);
 
-            static string WildcardToRegular(string value) 
+            static string WildcardToRegular(string value)
                 => "^" + Regex.Escape(value).Replace("\\?", ".").Replace("\\*", ".*") + "$";
         }
     }

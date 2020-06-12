@@ -42,7 +42,7 @@ namespace Moq
         private static Expression<Action<T>> CreateMoqVerifyExpressionFrom<T>(Expression expression)
         {
             var logLevelExpression = CreateLogLevelExpression(expression);
-            var eventIdExpression = CreateEventIdExpression(expression);          
+            var eventIdExpression = CreateEventIdExpression(expression);
             var exceptionExpression = CreateExceptionExpression(expression);
             var messageExpression = CreateMessageExpression(expression);
             var formatterExpression = CreateFormatterExpression(exceptionExpression);
