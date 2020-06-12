@@ -10,7 +10,7 @@ This is a [*Moq*](https://github.com/Moq/moq4/wiki/Quickstart) extension for *IL
 ## Nuget
 This package is stil in preview mode
 
-PM&gt; Install-Package ILogger.Moq -Version 1.0.0-preview.7
+PM&gt; Install-Package ILogger.Moq
 
 ## Examples
 
