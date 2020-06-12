@@ -1,0 +1,49 @@
+version: 1.0.0.preview-{build}
+branches:
+  only:
+  - master
+skip_branch_with_pr: true
+image: Visual Studio 2019
+configuration: Release
+shallow_clone: true
+init:
+  - cmd: dotnet --version
+  - ps: 'if (-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) { & dotnet tool install -g dotnet-sonarscanner }'
+  - cmd: dotnet tool install -g minicover
+dotnet_csproj:
+  patch: true 
+  file: '**\*.csproj'
+  version: '{version}'
+  package_version: '{version}'
+  assembly_version: '{version}'
+  file_version: '{version}'
+  informational_version: '{version}'
+nuget:
+  project_feed: true 
+before_build: 
+  - dotnet restore
+build_script:
+  # Begin SonarScanner
+  - ps: 'if (-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) { & dotnet sonarscanner begin /k:"Moq.ILogger" /o:adrianiftode-github /d:sonar.host.url="https://sonarcloud.io" /d:sonar.login="$env:SONAR_TOKEN" /v:"$env:APPVEYOR_BUILD_NUMBER" /d:sonar.cs.opencover.reportsPaths="opencovercoverage.xml" /d:sonar.coverage.exclusions=test/**}'
+  - dotnet pack --no-restore
+  - dotnet build
+  - minicover instrument
+test_script:
+  - dotnet test --no-restore --no-build
+after_test:
+  - minicover uninstrument
+  - minicover opencoverreport
+  # will fail when the test coverage is lower than the threshold
+  - minicover report --threshold 95
+  - ps: 'if (-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) { & dotnet sonarscanner end /d:sonar.login="$env:SONAR_TOKEN" }'
+artifacts:
+  path: '**\*.nupkg'
+  name: NuGet
+deploy:
+  provider: NuGet
+  api_key:
+    secure: TzFD73D30dGl8/byOn9f3FHWfZbtymqPCfB9rAhr0Y7ipjKug6aOwcCPMiwi/Izi
+  skip_symbols: false
+  artifact: /.*\.nupkg/
+  on: 
+    branch: master
