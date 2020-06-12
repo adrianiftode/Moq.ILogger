@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using System;
 using Xunit;
 
+// ReSharper disable once CheckNamespace
 namespace Moq.Tests.Samples
 {
     public class SomeClass
@@ -10,7 +11,8 @@ namespace Moq.Tests.Samples
         public SomeClass(ILogger<SomeClass> logger) => _logger = logger;
 
         public void LoggingInformation()
-            => _logger.LogInformation("This operation is successfull.");
+            => _logger.LogInformation("This operation is successful.");
+
         public void LoggingWarning(string name)
             => _logger.LogWarning(new ArgumentException("The given name is not ok", nameof(name)), "This operation failed, but let's log an warning only");
     }
@@ -25,8 +27,8 @@ namespace Moq.Tests.Samples
 
             sut.LoggingInformation();
 
-            loggerMock.VerifyLog(logger => logger.LogInformation("This operation is successfull."));
-            loggerMock.VerifyLog(logger => logger.LogInformation("This * is successfull."));
+            loggerMock.VerifyLog(logger => logger.LogInformation("This operation is successful."));
+            loggerMock.VerifyLog(logger => logger.LogInformation("This * is successful."));
             loggerMock.VerifyLog(logger => logger.LogInformation(It.Is<string>(msg => msg.Length > 5)));
             loggerMock.VerifyLog(logger => logger.LogInformation(It.IsAny<string>()));
             loggerMock.VerifyLog(logger => logger.LogInformation(It.IsNotNull<string>()));
@@ -43,8 +45,10 @@ namespace Moq.Tests.Samples
 
             loggerMock.VerifyLog(logger => logger.LogWarning(It.IsAny<ArgumentException>(), It.IsAny<string>()));
             loggerMock.VerifyLog(logger => logger.LogWarning(It.Is<ArgumentException>(ex => ex.ParamName == "name"), "*failed*"));
+            // ReSharper disable once RedundantCast
             loggerMock.VerifyLog(logger => logger.LogWarning((EventId)10, It.IsAny<ArgumentException>(), "*failed*"));
             loggerMock.VerifyLog(logger => logger.LogWarning(It.IsAny<EventId>(), It.IsAny<ArgumentException>(), "*failed*"));
+            // ReSharper disable once NotResolvedInText
             loggerMock.VerifyLog(logger => logger.LogWarning(It.IsAny<EventId>(), new ArgumentException("The given name is not ok", "name"), "*failed*"));
         }
     }

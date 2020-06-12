@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 
+// ReSharper disable once CheckNamespace
 namespace Moq
 {
     internal class LogArgsExpressions

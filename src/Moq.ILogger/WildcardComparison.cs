@@ -1,7 +1,8 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 
-namespace Moq.Internal
+// ReSharper disable once CheckNamespace
+namespace Moq
 {
     internal static class WildcardComparison
     {

@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 
+// ReSharper disable once CheckNamespace
 namespace Moq
 {
     internal class LogArgs
@@ -57,14 +58,6 @@ namespace Moq
         {
             var methodCall = (MethodCallExpression)((LambdaExpression)expression).Body;
             var argExpression = methodCall.Arguments.FirstOrDefault(c => c.Type == typeof(T)) as ConstantExpression;
-            var arg = argExpression?.Value as T;
-            return arg;
-        }
-
-        private static T GetAnyArgOf<T>(Expression expression) where T : class
-        {
-            var methodCall = (MethodCallExpression)((LambdaExpression)expression).Body;
-            var argExpression = methodCall.Arguments.FirstOrDefault(c => typeof(T).IsAssignableFrom(c.Type) || typeof(T) == c.Type) as ConstantExpression;
             var arg = argExpression?.Value as T;
             return arg;
         }

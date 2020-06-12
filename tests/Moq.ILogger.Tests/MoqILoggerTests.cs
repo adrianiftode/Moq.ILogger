@@ -3,6 +3,7 @@ using System;
 using Xunit;
 using FluentAssertions;
 
+// ReSharper disable once CheckNamespace
 namespace Moq.Tests
 {
     public class MoqILoggerTests
@@ -26,7 +27,7 @@ namespace Moq.Tests
 
             Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test message"));
 
-            act.Should().ThrowExactly<ILoggerMockException>()
+            act.Should().ThrowExactly<LoggerMockException>()
                 .WithMessage("*.LogInformation(\"Test message\")*");
         }
 
@@ -38,7 +39,7 @@ namespace Moq.Tests
 
             Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("A different message"));
 
-            act.Should().ThrowExactly<ILoggerMockException>()
+            act.Should().ThrowExactly<LoggerMockException>()
                 .WithMessage("*.LogInformation(\"A different message\")*");
         }
 
@@ -72,7 +73,7 @@ namespace Moq.Tests
 
             Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test message 2"));
 
-            act.Should().ThrowExactly<ILoggerMockException>()
+            act.Should().ThrowExactly<LoggerMockException>()
                 .WithMessage("*.LogInformation(\"Test message 2\")*");
         }
 
@@ -95,7 +96,7 @@ namespace Moq.Tests
 
             Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test message"));
 
-            act.Should().ThrowExactly<ILoggerMockException>()
+            act.Should().ThrowExactly<LoggerMockException>()
                 .WithMessage("*.LogInformation(\"Test message\")*");
         }
 
@@ -155,7 +156,7 @@ namespace Moq.Tests
 
             Action act = () => loggerMock.VerifyLog(c => c.LogWarning(It.Is<Exception>(e => e.Message == "Some different message."), "Test message"));
 
-            act.Should().ThrowExactly<ILoggerMockException>()
+            act.Should().ThrowExactly<LoggerMockException>()
                 .WithMessage("*.LogWarning(\"Test message\")*Some different message*");
         }
 
@@ -200,7 +201,7 @@ namespace Moq.Tests
 
             Action act = () => loggerMock.VerifyLog(c => c.LogInformation(It.Is<string>(msg => msg.Contains("Expecting something else"))));
 
-            act.Should().ThrowExactly<ILoggerMockException>()
+            act.Should().ThrowExactly<LoggerMockException>()
                 .WithMessage("*.LogInformation(\"\")*Expecting something else*");
         }
 
@@ -223,7 +224,7 @@ namespace Moq.Tests
 
             Action act = () => loggerMock.VerifyLog(c => c.LogWarning(It.IsAny<Exception>(), null));
 
-            act.Should().ThrowExactly<ILoggerMockException>()
+            act.Should().ThrowExactly<LoggerMockException>()
                .WithMessage("*.LogWarning(\"\")*");
         }
 
@@ -246,7 +247,7 @@ namespace Moq.Tests
 
             Action act = () => loggerMock.VerifyLog(c => c.LogInformation(It.IsNotNull<string>()));
 
-            act.Should().ThrowExactly<ILoggerMockException>()
+            act.Should().ThrowExactly<LoggerMockException>()
                .WithMessage("*.LogInformation*");
         }
 
@@ -269,7 +270,7 @@ namespace Moq.Tests
 
             Action act = () => loggerMock.VerifyLog(c => c.LogInformation(It.IsRegex("[0-9]")));
 
-            act.Should().ThrowExactly<ILoggerMockException>()
+            act.Should().ThrowExactly<LoggerMockException>()
              .WithMessage("*.LogInformation*");
         }
     }

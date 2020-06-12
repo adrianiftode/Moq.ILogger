@@ -1,18 +1,28 @@
 ﻿//https://github.com/dotnet/runtime/blob/e3ffd343ad5bd3a999cb9515f59e6e7a777b2c34/src/libraries/Microsoft.Extensions.Logging.Abstractions/src/LoggerExtensions.cs
 using Microsoft.Extensions.Logging;
-using Moq.Internal;
 using System;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 
+// ReSharper disable once CheckNamespace
 namespace Moq
 {
-
+    /// <summary>
+    /// Encapsulates a collection of extensions methods over Mock ILogger in order to define Moq Verify calls over the ILogger extensions
+    /// </summary>
     public static class MoqILoggerExtensions
     {
-        private const string NullMessageFromatted = "[null]";
+        private const string NullMessageFormatted = "[null]";
 
+        /// <summary>
+        /// Verifies that a specific invocation matching the given expression was performed on the ILogger mock.
+        /// </summary>
+        /// <param name="loggerMock">The ILogger mock object.</param>
+        /// <param name="expression">Expression to verify.</param>
+        /// <exception cref="LoggerMockException">
+        /// The invocation was not performed on the mock.
+        /// </exception>
         public static void VerifyLog(this Mock<ILogger> loggerMock, Expression<Action<ILogger>> expression)
         {
             var verifyExpression = CreateMoqVerifyExpressionFrom<ILogger>(expression);
@@ -22,10 +32,18 @@ namespace Moq
             }
             catch (MockException ex)
             {
-                throw new ILoggerMockException(BuildExceptionMessage(ex, expression), ex);
+                throw new LoggerMockException(BuildExceptionMessage(ex, expression), ex);
             }
         }
 
+        /// <summary>
+        /// Verifies that a specific invocation matching the given expression was performed on the generic ILogger mock.
+        /// </summary>
+        /// <param name="loggerMock">The generic ILogger mock object.</param>
+        /// <param name="expression">Expression to verify.</param>
+        /// <exception cref="LoggerMockException">
+        /// The invocation was not performed on the mock.
+        /// </exception>
         public static void VerifyLog<T>(this Mock<ILogger<T>> loggerMock, Expression<Action<ILogger>> expression)
         {
             var verifyExpression = CreateMoqVerifyExpressionFrom<ILogger<T>>(expression);
@@ -35,7 +53,7 @@ namespace Moq
             }
             catch (MockException ex)
             {
-                throw new ILoggerMockException(BuildExceptionMessage(ex, expression), ex);
+                throw new LoggerMockException(BuildExceptionMessage(ex, expression), ex);
             }
         }
 
@@ -94,7 +112,7 @@ namespace Moq
                 var compareExceptionsCallExpression = Expression.Call(typeof(MoqILoggerExtensions), nameof(CompareExceptions), null, exceptionConstantExpression, exceptionParam);
                 var compareExpression = Expression.Lambda<Func<Exception, bool>>(compareExceptionsCallExpression, exceptionParam);
                 var compareExceptionQuoteExpression = Expression.Quote(compareExpression);
-                var itIsExceptionExpression = Expression.Call(typeof(It), "Is", new Type[] { typeof(Exception) }, compareExceptionQuoteExpression);
+                var itIsExceptionExpression = Expression.Call(typeof(It), "Is", new[] { typeof(Exception) }, compareExceptionQuoteExpression);
                 return itIsExceptionExpression;
             }
 
@@ -140,7 +158,7 @@ namespace Moq
                 {
                     // build (v, t) => v.ToString() != "[null]"
                     var vParamToStringExpression = Expression.Call(vParam, typeof(object).GetMethod(nameof(object.ToString)));
-                    var nullConstantExpression = Expression.Constant(NullMessageFromatted);
+                    var nullConstantExpression = Expression.Constant(NullMessageFormatted);
                     var notNullConstantExpression = Expression.NotEqual(vParamToStringExpression, nullConstantExpression);
                     compareExpression = Expression.Lambda<Func<object, Type, bool>>(notNullConstantExpression, vParam, tParam);
                 }
@@ -178,12 +196,12 @@ namespace Moq
 
         private static bool CompareMessages(string message, object v)
         {
-            if (message == null && v.ToString() == NullMessageFromatted)
+            if (message == null && v.ToString() == NullMessageFormatted)
             {
                 return true;
             }
 
-            if (message == null || v.ToString() == NullMessageFromatted)
+            if (message == null || v.ToString() == NullMessageFormatted)
             {
                 return false;
             }
