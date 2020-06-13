@@ -20,6 +20,14 @@ public class SomeClass
 
     public SomeClass(ILogger<SomeClass> logger) => _logger = logger;
 
+    public void SemanticLogging()
+        {
+            var position = new { Latitude = 25, Longitude = 134 };
+            var elapsedMs = 34;
+
+            _logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+        }
+
     public void LoggingInformation()
         => _logger.LogInformation("This operation is successful.");
 
@@ -29,6 +37,19 @@ public class SomeClass
 ```
 
 Then the following interactions with the `ILogger` can be used.  
+
+```csharp
+ [Fact]
+public void Semantic_Logging()
+{
+    var loggerMock = new Mock<ILogger<SomeClass>>();
+    var sut = new SomeClass(loggerMock.Object);
+
+    sut.SemanticLogging();
+
+    loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, 34));
+}
+```
 
 ```csharp
 [Fact]

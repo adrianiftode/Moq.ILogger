@@ -63,16 +63,14 @@ namespace Moq.Tests.Samples
         [Fact]
         public void Semantic_Logging()
         {
-            var position = new { Latitude = 25, Longitude = 134 };
-            var elapsedMs = 34;
             var loggerMock = new Mock<ILogger<SomeClass>>();
             var sut = new SomeClass(loggerMock.Object);
 
             sut.SemanticLogging();
 
-            loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs));
+            loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, 34));
             loggerMock.VerifyLog(logger => logger.LogInformation("Processed * in * ms."));
-            loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} * {Elapsed:000} ms.", position, elapsedMs));
+            loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} * {Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, 34));
             //TODO  add support for It.Is for parameters
             //loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} * {Elapsed:000} ms.", It.IsAny<It.IsAnyType>(), It.Is<int>(ms => ms > 0)));
             //TODO  wildcard probably needs to be reanalyzed, if it should be used or not
