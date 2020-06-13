@@ -400,6 +400,9 @@ namespace Moq
             }
         }
 
+        private static Expression BuildItIsAnyExpression<T>()
+            => Expression.Call(typeof(It), "IsAny", new[] { typeof(T) });
+
         private static void GuardVerifyExpressionIsForLoggerExtensions(Expression expression)
         {
             var methodCall = (expression as LambdaExpression)?.Body as MethodCallExpression;
@@ -493,8 +496,6 @@ namespace Moq
             return formattedLogValues.ToString();
         }
 
-        private static Expression BuildItIsAnyExpression<T>()
-            => Expression.Call(typeof(It), "IsAny", new[] { typeof(T) });
         private static string BuildExceptionMessage(MockException ex, Expression expression)
         {
             var stringBuilderExtensions = typeof(Mock).Assembly.GetTypes()
