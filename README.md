@@ -21,12 +21,12 @@ public class SomeClass
     public SomeClass(ILogger<SomeClass> logger) => _logger = logger;
 
     public void SemanticLogging()
-        {
-            var position = new { Latitude = 25, Longitude = 134 };
-            var elapsedMs = 34;
+    {
+        var position = new { Latitude = 25, Longitude = 134 };
+        var elapsedMs = 34;
 
-            _logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
-        }
+         _logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+    }
 
     public void LoggingInformation()
         => _logger.LogInformation("This operation is successful.");
@@ -39,7 +39,7 @@ public class SomeClass
 Then the following interactions with the `ILogger` can be used.  
 
 ```csharp
- [Fact]
+[Fact]
 public void Semantic_Logging()
 {
     var loggerMock = new Mock<ILogger<SomeClass>>();
@@ -47,7 +47,8 @@ public void Semantic_Logging()
 
     sut.SemanticLogging();
 
-    loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, 34));
+    loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", 
+                                                          new { Latitude = 25, Longitude = 134 }, 34));
 }
 ```
 
@@ -85,16 +86,16 @@ public void Verify_errors()
     loggerMock.VerifyLog(logger => logger.LogWarning(It.IsAny<EventId>(), new ArgumentException("The given name is not ok", "name"), "*failed*"));
 }
 ```
-The verification expressions use the *ILogger* extensions methods which is not normally possible with **Moq**.
-Notice the *VerifyLog* method is used and not *Verify*. 
-If you use `Verify` instead of `VerifyLog` you would get a Moq exception with the following message `Invalid verify on an extension method`.
+It is expected for the verification expression to use *ILogger* extensions methods, which is not normally possible with **Moq**.
+Notice the `VerifyLog` method is used and not the usual *Verify* method from **Moq**. 
+If you use *Verify* instead of `VerifyLog` you'll then get a **Moq** exception with the following message `Invalid verify on an extension method`.
 
 ## Why
-Moq cannot verify extension methods calls so you'll have to check the extension implementation and see what is actually called, then write the Moq Verify expression based on the implementation.
+**Moq** cannot verify extension methods calls so you'll have to check the extension implementation and see what is actually called, then write the Moq Verify expression based on the implementation.
 
-This package translates the given `VerifyLog` expression into one useful for Moq so it can pass it to the `ILogger.Log` method, which is part of the `ILogger` definition, and not an instance method.
+This package translates the given `VerifyLog` expression into one useful for **Moq** so it can pass it to the `ILogger.Log` method, which is part of the `ILogger` definition, and not an instance method.
 
-When an extension method is passed to Moq, then an exception like the following one it is raise.
+When an extension method is passed to **Moq**, then an exception like the following one is raised.
 ```
   Message: 
     System.NotSupportedException : Invalid verify on an extension method: logger => logger.LogInformation("User is not authorized {user}", new[] {  })
