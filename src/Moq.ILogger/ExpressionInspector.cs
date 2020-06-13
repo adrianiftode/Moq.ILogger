@@ -5,7 +5,7 @@ using System.Linq.Expressions;
 // ReSharper disable once CheckNamespace
 namespace Moq
 {
-    internal class ExpressionInspector
+    internal static class ExpressionInspector
     {
         internal static T GetArgOf<T>(Expression expression) where T : class
             => (GetArgExpression(expression, c => c.Type == typeof(T)) as ConstantExpression)?.Value as T;
