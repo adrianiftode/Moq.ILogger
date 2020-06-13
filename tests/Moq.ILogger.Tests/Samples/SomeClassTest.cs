@@ -61,7 +61,7 @@ namespace Moq.Tests.Samples
         }
 
         [Fact]
-        public void Semantic_Logging()
+        public void Verify_semantic_logging()
         {
             var loggerMock = new Mock<ILogger<SomeClass>>();
             var sut = new SomeClass(loggerMock.Object);

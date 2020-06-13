@@ -1,5 +1,5 @@
 # Moq.ILogger
-This is a [*Moq*](https://github.com/Moq/moq4/wiki/Quickstart) extension for *ILogger* in order to **Verify** the SUT interactions with the `ILogger` extensions using all the Moq goodies.
+This is a [*Moq*](https://github.com/Moq/moq4/wiki/Quickstart) extension for *ILogger* in order to **Verify** the SUT interactions with the `ILogger` extensions using all the **Moq** goodies.
 
 [![Build status](https://ci.appveyor.com/api/projects/status/iixn0pkeuuov1rwb/branch/master?svg=true)](https://ci.appveyor.com/project/adrianiftode/moq-ilogger/branch/master)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Moq.ILogger&metric=alert_status)](https://sonarcloud.io/dashboard?id=Moq.ILogger)
@@ -12,7 +12,8 @@ This package is stil in preview mode
 
 ## Examples
 
-Given the following SUT
+Given the following SUT:
+
 ```csharp
 public class SomeClass
 {
@@ -36,11 +37,11 @@ public class SomeClass
 }
 ```
 
-Then the following interactions with the `ILogger` can be used.  
+Then the such SUT-`ILogger` interactions with can be verified:
 
 ```csharp
 [Fact]
-public void Semantic_Logging()
+public void Verify_semantic_logging()
 {
     var loggerMock = new Mock<ILogger<SomeClass>>();
     var sut = new SomeClass(loggerMock.Object);
@@ -85,9 +86,10 @@ public void Verify_errors()
     loggerMock.VerifyLog(logger => logger.LogWarning(It.IsAny<EventId>(), It.IsAny<ArgumentException>(), "*failed*"));
     loggerMock.VerifyLog(logger => logger.LogWarning(It.IsAny<EventId>(), new ArgumentException("The given name is not ok", "name"), "*failed*"));
 }
+
 ```
-It is expected for the verification expression to use *ILogger* extensions methods, which is not normally possible with **Moq**.
-Notice the `VerifyLog` method is used and not the usual *Verify* method from **Moq**. 
+It is expected for the `VefifyLog` expression to use *ILogger* extensions methods, which is not normally possible with **Moq**.
+Also notice the `VerifyLog` method is used and not the usual *Verify* method from **Moq**. 
 If you use *Verify* instead of `VerifyLog` you'll then get a **Moq** exception with the following message `Invalid verify on an extension method`.
 
 ## Why
