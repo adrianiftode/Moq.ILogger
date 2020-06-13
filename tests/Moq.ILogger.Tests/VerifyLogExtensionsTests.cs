@@ -214,7 +214,7 @@ namespace Moq.Tests
             var loggerMock = new Mock<ILogger<object>>();
             loggerMock.Object.LogInformation("Test message");
 
-            Action act = () => loggerMock.VerifyLog(c => c.LogInformation(new string(new []{'a'})));
+            Action act = () => loggerMock.VerifyLog(c => c.LogInformation(new string(new[] { 'a' })));
 
             act.Should().ThrowExactly<VerifyLogException>()
                 .WithMessage("*.LogInformation(\"\")*" +
@@ -441,11 +441,134 @@ namespace Moq.Tests
             act.Should().ThrowExactly<NotSupportedException>()
                 .WithMessage("Moq.ILogger supports*Microsoft.Extensions.Logging*A method name could not be resolved*");
         }
+
+        [Fact]
+        public void Verify_includes_the_fail_message()
+        {
+            var loggerMock = new Mock<ILogger>();
+            loggerMock.Object.LogDebug("Test message");
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogDebug("Message"), "We expect to log `Message`.");
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*We expect to log `Message`.*");
+        }
+
+        [Fact]
+        public void Verify_includes_the_fail_message_for_generic_logger()
+        {
+            var loggerMock = new Mock<ILogger<object>>();
+            loggerMock.Object.LogDebug("Test message");
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogDebug("Message"), "We expect to log `Message`.");
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*We expect to log `Message`.*");
+        }
+
+        [Fact]
+        public void Verify_uses_Times()
+        {
+            var loggerMock = new Mock<ILogger>();
+            loggerMock.Object.LogDebug("Test message");
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogDebug("Test message"), Times.AtLeast(2));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*Expected invocation on the mock at least 2 times, but was 1 time*");
+        }
+
+        [Fact]
+        public void Verify_includes_the_fail_message_with_Times()
+        {
+            var loggerMock = new Mock<ILogger>();
+            loggerMock.Object.LogDebug("Test message");
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogDebug("Test message"), Times.AtLeast(2), "We expect to log `Test message` at least twice.");
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*Expected invocation on the mock at least 2 times, but was 1 time*")
+                .WithMessage("*We expect to log `Test message` at least twice.*");
+        }
+
+        [Fact]
+        public void Verify_uses_Times_for_generic_logger()
+        {
+            var loggerMock = new Mock<ILogger<object>>();
+            loggerMock.Object.LogDebug("Test message");
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogDebug("Test message"), Times.AtLeast(2));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*Expected invocation on the mock at least 2 times, but was 1 time*");
+        }
+
+        [Fact]
+        public void Verify_includes_the_fail_message_with_Times_for_generic_logger()
+        {
+            var loggerMock = new Mock<ILogger<object>>();
+            loggerMock.Object.LogDebug("Test message");
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogDebug("Test message"), Times.AtLeast(2), "We expect to log `Test message` at least twice.");
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*Expected invocation on the mock at least 2 times, but was 1 time*")
+                .WithMessage("*We expect to log `Test message` at least twice.*");
+        }
+
+        [Fact]
+        public void Verify_uses_Func_Times()
+        {
+            var loggerMock = new Mock<ILogger>();
+            loggerMock.Object.LogDebug("Test message");
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogDebug("Test message"), () => Times.AtLeast(2));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*Expected invocation on the mock at least 2 times, but was 1 time*");
+        }
+
+        [Fact]
+        public void Verify_includes_the_fail_message_with_Func_Times()
+        {
+            var loggerMock = new Mock<ILogger>();
+            loggerMock.Object.LogDebug("Test message");
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogDebug("Test message"), () => Times.AtLeast(2), "We expect to log `Test message` at least twice.");
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*Expected invocation on the mock at least 2 times, but was 1 time*")
+                .WithMessage("*We expect to log `Test message` at least twice.*");
+        }
+
+        [Fact]
+        public void Verify_uses_Func_Times_for_generic_logger()
+        {
+            var loggerMock = new Mock<ILogger<object>>();
+            loggerMock.Object.LogDebug("Test message");
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogDebug("Test message"), () => Times.AtLeast(2));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*Expected invocation on the mock at least 2 times, but was 1 time*");
+        }
+
+        [Fact]
+        public void Verify_includes_the_fail_message_with_Func_Times_for_generic_logger()
+        {
+            var loggerMock = new Mock<ILogger<object>>();
+            loggerMock.Object.LogDebug("Test message");
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogDebug("Test message"), () => Times.AtLeast(2), "We expect to log `Test message` at least twice.");
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*Expected invocation on the mock at least 2 times, but was 1 time*")
+                .WithMessage("*We expect to log `Test message` at least twice.*");
+        }
     }
 
     internal static class OtherExtensions
     {
-        public static void SomeLoggerExtension(this ILogger logger) {}
-        public static void SomeLoggerExtension<T>(this ILogger<T> logger) {}
+        public static void SomeLoggerExtension(this ILogger logger) { }
     }
 }

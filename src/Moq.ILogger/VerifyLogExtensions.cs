@@ -15,51 +15,220 @@ namespace Moq
     {
         private const string NullMessageFormatted = "[null]";
 
+        #region VerifyLog API
         /// <summary>
         /// Verifies that a specific invocation matching the given expression was performed on the ILogger mock.
         /// </summary>
-        /// <param name="loggerMock">The ILogger mock object.</param>
+        /// <param name="loggerMock">The generic ILogger mock object.</param>
         /// <param name="expression">Expression to verify.</param>
+        /// <param name="failMessage">Message to show if verification fails.</param>
         /// <exception cref="VerifyLogException">
-        /// The invocation was not performed on the mock.
+        /// The invocation was not performed on the ILogger mock.
         /// </exception>
-        public static void VerifyLog(this Mock<ILogger> loggerMock, Expression<Action<ILogger>> expression)
-        {
-            EnsureExpressionIsForLoggerExtensions(expression);
-
-            var verifyLogExpression = VerifyLogExpression.From(expression);
-            var verifyExpression = CreateMoqVerifyExpressionFrom<ILogger>(verifyLogExpression);
-            try
-            {
-                loggerMock.Verify(verifyExpression);
-            }
-            catch (MockException ex)
-            {
-                throw new VerifyLogException(BuildExceptionMessage(ex, expression, verifyLogExpression.Args), ex);
-            }
-        }
+        /// <exception cref="NotSupportedException">
+        /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
+        /// </exception>
+        public static void VerifyLog(this Mock<ILogger> loggerMock, Expression<Action<ILogger>> expression, string failMessage)
+            => Verify(loggerMock, expression, null, null, failMessage);
 
         /// <summary>
-        /// Verifies that a specific invocation matching the given expression was performed on the generic ILogger mock.
+        /// Verifies that a specific invocation matching the given expression was performed on the ILogger mock.
+        /// </summary>
+        /// <param name="loggerMock">The generic ILogger mock object.</param>
+        /// <param name="expression">Expression to verify.</param>
+        /// <param name="times">The number of times a method is expected to be called.</param>
+        /// <exception cref="VerifyLogException">
+        /// The invocation was not performed on the ILogger mock.
+        /// </exception>
+        /// <exception cref="NotSupportedException">
+        /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
+        /// </exception>
+        public static void VerifyLog(this Mock<ILogger> loggerMock, Expression<Action<ILogger>> expression, Times times)
+            => Verify(loggerMock, expression, times, null, null);
+
+        /// <summary>
+        /// Verifies that a specific invocation matching the given expression was performed on the ILogger mock.
+        /// </summary>
+        /// <param name="loggerMock">The generic ILogger mock object.</param>
+        /// <param name="expression">Expression to verify.</param>
+        /// <param name="times">The number of times a method is expected to be called.</param>
+        /// <param name="failMessage">Message to show if verification fails.</param>
+        /// <exception cref="VerifyLogException">
+        /// The invocation was not performed on the ILogger mock.
+        /// </exception>
+        /// <exception cref="NotSupportedException">
+        /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
+        /// </exception>
+        public static void VerifyLog(this Mock<ILogger> loggerMock, Expression<Action<ILogger>> expression, Times times, string failMessage)
+            => Verify(loggerMock, expression, times, null, failMessage);
+
+        /// <summary>
+        /// Verifies that a specific invocation matching the given expression was performed on the ILogger mock.
+        /// </summary>
+        /// <param name="loggerMock">The generic ILogger mock object.</param>
+        /// <param name="expression">Expression to verify.</param>
+        /// <param name="times">The number of times a method is expected to be called.</param>
+        /// <exception cref="VerifyLogException">
+        /// The invocation was not performed on the ILogger mock.
+        /// </exception>
+        /// <exception cref="NotSupportedException">
+        /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
+        /// </exception>
+        public static void VerifyLog(this Mock<ILogger> loggerMock, Expression<Action<ILogger>> expression, Func<Times> times)
+            => Verify(loggerMock, expression, null, times, null);
+
+        /// <summary>
+        /// Verifies that a specific invocation matching the given expression was performed on the ILogger mock.
+        /// </summary>
+        /// <param name="loggerMock">The generic ILogger mock object.</param>
+        /// <param name="expression">Expression to verify.</param>
+        /// <param name="times">The number of times a method is expected to be called.</param>
+        /// <param name="failMessage">Message to show if verification fails.</param>
+        /// <exception cref="VerifyLogException">
+        /// The invocation was not performed on the ILogger mock.
+        /// </exception>
+        /// <exception cref="NotSupportedException">
+        /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
+        /// </exception>
+        public static void VerifyLog(this Mock<ILogger> loggerMock, Expression<Action<ILogger>> expression, Func<Times> times, string failMessage)
+            => Verify(loggerMock, expression, null, times, failMessage);
+
+        /// <summary>
+        /// Verifies that a specific invocation matching the given expression was performed on the ILogger mock.
         /// </summary>
         /// <param name="loggerMock">The generic ILogger mock object.</param>
         /// <param name="expression">Expression to verify.</param>
         /// <exception cref="VerifyLogException">
-        /// The invocation was not performed on the mock.
+        /// The invocation was not performed on the ILogger mock.
+        /// </exception>
+        /// <exception cref="NotSupportedException">
+        /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
+        /// </exception>
+        public static void VerifyLog(this Mock<ILogger> loggerMock, Expression<Action<ILogger>> expression)
+            => Verify(loggerMock, expression, null, null, null);
+
+        /// <summary>
+        /// Verifies that a specific invocation matching the given expression was performed on the generic ILogger mock.
+        /// </summary>
+        /// <typeparam name="T">The type of the logger category</typeparam>
+        /// <param name="loggerMock">The generic ILogger mock object.</param>
+        /// <param name="expression">Expression to verify.</param>
+        /// <exception cref="VerifyLogException">
+        /// The invocation was not performed on the ILogger mock.
+        /// </exception>
+        /// <exception cref="NotSupportedException">
+        /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
         /// </exception>
         public static void VerifyLog<T>(this Mock<ILogger<T>> loggerMock, Expression<Action<ILogger>> expression)
+            => Verify(loggerMock, expression, null, null, null);
+
+        /// <summary>
+        /// Verifies that a specific invocation matching the given expression was performed on the generic ILogger mock.
+        /// </summary>
+        /// <typeparam name="T">The type of the logger category</typeparam>
+        /// <param name="loggerMock">The generic ILogger mock object.</param>
+        /// <param name="expression">Expression to verify.</param>
+        /// <param name="failMessage">Message to show if verification fails.</param>
+        /// <exception cref="VerifyLogException">
+        /// The invocation was not performed on the ILogger mock.
+        /// </exception>
+        /// <exception cref="NotSupportedException">
+        /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
+        /// </exception>
+        public static void VerifyLog<T>(this Mock<ILogger<T>> loggerMock, Expression<Action<ILogger>> expression, string failMessage)
+            => Verify(loggerMock, expression, null, null, failMessage);
+
+        /// <summary>
+        /// Verifies that a specific invocation matching the given expression was performed on the generic ILogger mock.
+        /// </summary>
+        /// <typeparam name="T">The type of the logger category</typeparam>
+        /// <param name="loggerMock">The generic ILogger mock object.</param>
+        /// <param name="expression">Expression to verify.</param>
+        /// <param name="times">The number of times a method is expected to be called.</param>
+        /// <exception cref="VerifyLogException">
+        /// The invocation was not performed on the ILogger mock.
+        /// </exception>
+        /// <exception cref="NotSupportedException">
+        /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
+        /// </exception>
+        public static void VerifyLog<T>(this Mock<ILogger<T>> loggerMock, Expression<Action<ILogger>> expression, Times times)
+            => Verify(loggerMock, expression, times, null, null);
+
+        /// <summary>
+        /// Verifies that a specific invocation matching the given expression was performed on the generic ILogger mock.
+        /// </summary>
+        /// <typeparam name="T">The type of the logger category</typeparam>
+        /// <param name="loggerMock">The generic ILogger mock object.</param>
+        /// <param name="expression">Expression to verify.</param>
+        /// <param name="times">The number of times a method is expected to be called.</param>
+        /// <param name="failMessage">Message to show if verification fails.</param>
+        /// <exception cref="VerifyLogException">
+        /// The invocation was not performed on the ILogger mock.
+        /// </exception>
+        /// <exception cref="NotSupportedException">
+        /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
+        /// </exception>
+        public static void VerifyLog<T>(this Mock<ILogger<T>> loggerMock, Expression<Action<ILogger>> expression, Times times, string failMessage)
+            => Verify(loggerMock, expression, times, null, failMessage);
+
+
+        /// <summary>
+        /// Verifies that a specific invocation matching the given expression was performed on the generic ILogger mock.
+        /// </summary>
+        /// <typeparam name="T">The type of the logger category</typeparam>
+        /// <param name="loggerMock">The generic ILogger mock object.</param>
+        /// <param name="expression">Expression to verify.</param>
+        /// <param name="times">The number of times a method is expected to be called.</param>
+        /// <exception cref="VerifyLogException">
+        /// The invocation was not performed on the ILogger mock.
+        /// </exception>
+        /// <exception cref="NotSupportedException">
+        /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
+        /// </exception>
+        public static void VerifyLog<T>(this Mock<ILogger<T>> loggerMock, Expression<Action<ILogger>> expression, Func<Times> times)
+            => Verify(loggerMock, expression, null, times, null);
+
+        /// <summary>
+        /// Verifies that a specific invocation matching the given expression was performed on the generic ILogger mock.
+        /// </summary>
+        /// <typeparam name="T">The type of the logger category</typeparam>
+        /// <param name="loggerMock">The generic ILogger mock object.</param>
+        /// <param name="expression">Expression to verify.</param>
+        /// <param name="times">The number of times a method is expected to be called.</param>
+        /// <param name="failMessage">Message to show if verification fails.</param>
+        /// <exception cref="VerifyLogException">
+        /// The invocation was not performed on the ILogger mock.
+        /// </exception>
+        /// <exception cref="NotSupportedException">
+        /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
+        /// </exception>
+        public static void VerifyLog<T>(this Mock<ILogger<T>> loggerMock, Expression<Action<ILogger>> expression, Func<Times> times, string failMessage)
+            => Verify(loggerMock, expression, null, times, failMessage);
+        #endregion
+
+        private static void Verify<T>(Mock<T> loggerMock, Expression<Action<ILogger>> expression, Times? times, Func<Times> timesFunc,
+            string failMessage) where T : class
         {
-            EnsureExpressionIsForLoggerExtensions(expression);
+            GuardVerifyExpressionIsForLoggerExtensions(expression);
 
             var verifyLogExpression = VerifyLogExpression.From(expression);
-            var verifyExpression = CreateMoqVerifyExpressionFrom<ILogger<T>>(verifyLogExpression);
+            var verifyExpression = CreateMoqVerifyExpressionFrom<T>(verifyLogExpression);
             try
             {
-                loggerMock.Verify(verifyExpression);
+                if (timesFunc != null)
+                {
+                    loggerMock.Verify(verifyExpression, timesFunc, failMessage);
+                }
+                else if (times.HasValue)
+                {
+                    loggerMock.Verify(verifyExpression, times.Value, failMessage);
+                }
+
+                loggerMock.Verify(verifyExpression, failMessage);
             }
             catch (MockException ex)
             {
-                throw new VerifyLogException(BuildExceptionMessage(ex, expression, verifyLogExpression.Args), ex);
+                throw new VerifyLogException(BuildExceptionMessage(ex, verifyLogExpression.Args), ex);
             }
         }
 
@@ -189,11 +358,11 @@ namespace Moq
                                 }
                             // GetSomeMessage(a, b, c, ....)
                             default:
-                            {
-                                //build (v, t) => Compare(v.ToString(), GetSomeMessage(a, b, c, ....))
-                                compareExpression = CreateCompareLambdaFrom(methodCallExpression);
-                                break;
-                            }
+                                {
+                                    //build (v, t) => Compare(v.ToString(), GetSomeMessage(a, b, c, ....))
+                                    compareExpression = CreateCompareLambdaFrom(methodCallExpression);
+                                    break;
+                                }
                         }
                         break;
                     }
@@ -206,7 +375,7 @@ namespace Moq
             }
 
             var compareMessageQuoteExpression = Expression.Quote(compareExpression);
-            var itIsMessageExpression = Expression.Call(typeof(It), "Is", new Type[] { typeof(It.IsAnyType) }, compareMessageQuoteExpression);
+            var itIsMessageExpression = Expression.Call(typeof(It), "Is", new[] { typeof(It.IsAnyType) }, compareMessageQuoteExpression);
             return itIsMessageExpression;
 
             Expression<Func<object, Type, bool>> CreateCompareLambdaFrom(Expression methodCallExpression)
@@ -225,7 +394,7 @@ namespace Moq
             }
         }
 
-        private static void EnsureExpressionIsForLoggerExtensions(Expression expression)
+        private static void GuardVerifyExpressionIsForLoggerExtensions(Expression expression)
         {
             var methodCall = (expression as LambdaExpression)?.Body as MethodCallExpression;
             var methodIsaMsLoggerExtensions = methodCall?.Method.ReflectedType == typeof(LoggerExtensions);
@@ -242,18 +411,22 @@ namespace Moq
 
             if (!methodIsaMsLoggerExtensions || methodName is null || !supportedMethods.Contains(methodName))
             {
-                var message = "Moq.ILogger supports only the extensions " +
-                              "defined in the Microsoft.Extensions.Logging package " +
-                              "and that are specifically defined for " +
-                              $"LogXXX use cases ({string.Join(", ", supportedMethods)}).";
+                var message = $"{nameof(Moq)}.{nameof(ILogger)} supports only specific Logging extensions " +
+                              "as defined in the <a href=\"https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions\">LoggerExtensions class</a> " +
+                              "form the <a href=\"https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/\">\"Microsoft.Extensions.Logging.Abstractions\"</a> package. " +
+                              $"The Log use case must be on of ({string.Join(", ", supportedMethods)}). ";
 
                 if (!string.IsNullOrEmpty(methodName))
                 {
-                    message += $" The resolved method `{methodName}` in the verify expression is not one of these.";
+                    message += $"{Environment.NewLine}" +
+                               $"{Environment.NewLine}" +
+                               $"The resolved method `{methodName}` in the verify expression is not one of these.";
                 }
                 else
                 {
-                    message += " A method name could not be resolved from the verify expression.";
+                    message += $"{Environment.NewLine}" +
+                               $"{Environment.NewLine}" +
+                               "A method name could not be resolved from the verify expression.";
                 }
 
                 throw new NotSupportedException(message);
@@ -293,7 +466,7 @@ namespace Moq
         private static Expression BuildItIsAnyExpression<T>()
             => Expression.Call(typeof(It), "IsAny", new[] { typeof(T) });
 
-        private static string BuildExceptionMessage(MockException ex, Expression expression, VerifyLogExpressionArgs args)
+        private static string BuildExceptionMessage(MockException ex, VerifyLogExpressionArgs args)
             => BuildExceptionMessage(ex, args.LogLevel, args.Message);
 
         private static string BuildExceptionMessage(MockException ex, LogLevel level, string message)
