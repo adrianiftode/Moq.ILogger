@@ -27,15 +27,15 @@ namespace Moq
         {
             EnsureExpressionIsForLoggerExtensions(expression);
 
-            var logArgsExpressions = VerifyLogArgsExpressions.From(expression);
-            var verifyExpression = CreateMoqVerifyExpressionFrom<ILogger>(logArgsExpressions);
+            var verifyLogExpression = VerifyLogExpression.From(expression);
+            var verifyExpression = CreateMoqVerifyExpressionFrom<ILogger>(verifyLogExpression);
             try
             {
                 loggerMock.Verify(verifyExpression);
             }
             catch (MockException ex)
             {
-                throw new VerifyLogException(BuildExceptionMessage(ex, expression, logArgsExpressions.LogArgs), ex);
+                throw new VerifyLogException(BuildExceptionMessage(ex, expression, verifyLogExpression.Args), ex);
             }
         }
 
@@ -51,28 +51,28 @@ namespace Moq
         {
             EnsureExpressionIsForLoggerExtensions(expression);
 
-            var logArgs = VerifyLogArgs.From(expression);
-            var logArgsExpressions = VerifyLogArgsExpressions.From(expression);
-            var verifyExpression = CreateMoqVerifyExpressionFrom<ILogger<T>>(logArgsExpressions);
+            var verifyLogExpression = VerifyLogExpression.From(expression);
+            var verifyExpression = CreateMoqVerifyExpressionFrom<ILogger<T>>(verifyLogExpression);
             try
             {
                 loggerMock.Verify(verifyExpression);
             }
             catch (MockException ex)
             {
-                throw new VerifyLogException(BuildExceptionMessage(ex, expression, logArgs), ex);
+                throw new VerifyLogException(BuildExceptionMessage(ex, expression, verifyLogExpression.Args), ex);
             }
         }
 
-        private static Expression<Action<T>> CreateMoqVerifyExpressionFrom<T>(VerifyLogArgsExpressions logArgsExpressions)
+        private static Expression<Action<T>> CreateMoqVerifyExpressionFrom<T>(VerifyLogExpression verifyLogExpression)
         {
-            var logLevelExpression = CreateLogLevelExpression(logArgsExpressions.LogArgs);
+            var logLevelExpression = CreateLogLevelExpression(verifyLogExpression);
             var eventIdExpression = CreateEventIdExpression();
-            var exceptionExpression = CreateExceptionExpression(logArgsExpressions.LogArgs, logArgsExpressions);
-            var messageExpression = CreateMessageExpression(logArgsExpressions);
+            var exceptionExpression = CreateExceptionExpression(verifyLogExpression);
+            var messageExpression = CreateMessageExpression(verifyLogExpression);
             var formatterExpression = CreateFormatterExpression();
 
             var loggerParameter = Expression.Parameter(typeof(T), "logger");
+            // ReSharper disable once PossibleNullReferenceException
             var logMethodInfo = typeof(ILogger).GetMethod(nameof(ILogger.Log)).MakeGenericMethod(typeof(It.IsAnyType));
             var logCallExpression = Expression.Call(loggerParameter, logMethodInfo,
                 logLevelExpression,
@@ -85,8 +85,8 @@ namespace Moq
             return verifyExpression;
         }
 
-        private static Expression CreateLogLevelExpression(VerifyLogArgs args) 
-            => Expression.Constant(args.LogLevel);
+        private static Expression CreateLogLevelExpression(VerifyLogExpression verifyLogExpression) 
+            => Expression.Constant(verifyLogExpression.Args.LogLevel);
 
         private static Expression CreateFormatterExpression()
         {
@@ -98,18 +98,19 @@ namespace Moq
         private static Expression CreateEventIdExpression()
             => BuildItIsAnyExpression<EventId>();
 
-        private static Expression CreateExceptionExpression(VerifyLogArgs args, VerifyLogArgsExpressions expressions)
+        private static Expression CreateExceptionExpression(VerifyLogExpression verifyLogExpression)
         {
-            if (expressions.Exception == null)
+            if (verifyLogExpression.Exception == null)
             {
                 return BuildItIsAnyExpression<Exception>();
             }
 
-            if (args.Exception != null)
+            var exception = verifyLogExpression.Args.Exception;
+            if (exception != null)
             {
                 // build It.Is(CompareExceptions(exception)),
                 var exceptionParam = Expression.Parameter(typeof(Exception));
-                var exceptionConstantExpression = Expression.Constant(args.Exception, typeof(Exception));
+                var exceptionConstantExpression = Expression.Constant(exception, typeof(Exception));
                 var compareExceptionsCallExpression = Expression.Call(typeof(VerifyLogExtensions), nameof(CompareExceptions), null, exceptionConstantExpression, exceptionParam);
                 var compareExpression = Expression.Lambda<Func<Exception, bool>>(compareExceptionsCallExpression, exceptionParam);
                 var compareExceptionQuoteExpression = Expression.Quote(compareExpression);
@@ -117,12 +118,12 @@ namespace Moq
                 return itIsExceptionExpression;
             }
 
-            return expressions.Exception ?? BuildItIsAnyExpression<Exception>();
+            return verifyLogExpression.Exception ?? BuildItIsAnyExpression<Exception>();
         }
 
-        private static MethodCallExpression CreateMessageExpression(VerifyLogArgsExpressions logArgsExpressions)
+        private static MethodCallExpression CreateMessageExpression(VerifyLogExpression verifyLogExpression)
         {
-            var messageArg = logArgsExpressions.Message;
+            var messageArg = verifyLogExpression.Message;
 
             var vParam = Expression.Parameter(typeof(object), "v");
             var tParam = Expression.Parameter(typeof(Type), "t");
@@ -150,7 +151,7 @@ namespace Moq
                     var messagePredicate = ((UnaryExpression)methodCallExpression.Arguments.First()).Operand;
                     if (messagePredicate is Expression<Func<string, bool>> stringMessagePredicate)
                     {
-                        var vParamToStringExpression = Expression.Call(vParam, typeof(object).GetMethod(nameof(object.ToString)));
+                        var vParamToStringExpression = Expression.Call(vParam, typeof(object).GetMethod(nameof(ToString))!);
                         var invokeStringMessagePredicateExpression = Expression.Invoke(stringMessagePredicate, vParamToStringExpression);
                         compareExpression = Expression.Lambda<Func<object, Type, bool>>(invokeStringMessagePredicateExpression, vParam, tParam);
                     }
@@ -158,7 +159,7 @@ namespace Moq
                 else if (methodName == "IsNotNull") // It.IsNotNull<string>())
                 {
                     // build (v, t) => v.ToString() != "[null]"
-                    var vParamToStringExpression = Expression.Call(vParam, typeof(object).GetMethod(nameof(object.ToString)));
+                    var vParamToStringExpression = Expression.Call(vParam, typeof(object).GetMethod(nameof(ToString))!);
                     var nullConstantExpression = Expression.Constant(NullMessageFormatted);
                     var notNullConstantExpression = Expression.NotEqual(vParamToStringExpression, nullConstantExpression);
                     compareExpression = Expression.Lambda<Func<object, Type, bool>>(notNullConstantExpression, vParam, tParam);
@@ -169,7 +170,7 @@ namespace Moq
                     var pattern = ((ConstantExpression)((MethodCallExpression)messageArg).Arguments[0]).Value;
                     var patternConstantExpression = Expression.Constant(pattern);
                     var regexOptionsConstantExpression = Expression.Constant(RegexOptions.IgnoreCase);
-                    var vParamToStringExpression = Expression.Call(vParam, typeof(object).GetMethod(nameof(object.ToString)));
+                    var vParamToStringExpression = Expression.Call(vParam, typeof(object).GetMethod(nameof(ToString))!);
                     var callRegexIsMatchExpression = Expression.Call(typeof(Regex), nameof(Regex.IsMatch), null, vParamToStringExpression, patternConstantExpression, regexOptionsConstantExpression);
                     compareExpression = Expression.Lambda<Func<object, Type, bool>>(callRegexIsMatchExpression, vParam, tParam);
                 }
@@ -248,10 +249,8 @@ namespace Moq
         private static Expression BuildItIsAnyExpression<T>()
             => Expression.Call(typeof(It), "IsAny", new[] { typeof(T) });
 
-        private static string BuildExceptionMessage(MockException ex, Expression expression, VerifyLogArgs args)
-        {
-            return BuildExceptionMessage(ex, args.LogLevel, args.Message);
-        }
+        private static string BuildExceptionMessage(MockException ex, Expression expression, VerifyLogExpressionArgs args) 
+            => BuildExceptionMessage(ex, args.LogLevel, args.Message);
 
         private static string BuildExceptionMessage(MockException ex, LogLevel level, string message)
             => $"Expected an invocation on the .Log{level}(\"{message}\"), but was never performed." +

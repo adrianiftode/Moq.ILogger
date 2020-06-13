@@ -1,12 +1,11 @@
 ﻿using Microsoft.Extensions.Logging;
 using System;
-using System.Linq;
 using System.Linq.Expressions;
 
 // ReSharper disable once CheckNamespace
 namespace Moq
 {
-    internal class VerifyLogArgs
+    internal class VerifyLogExpressionArgs
     {
         public LogLevel LogLevel { get; private set; }
         public string Message { get; private set; }
@@ -14,11 +13,11 @@ namespace Moq
         public EventId EventId { get; private set; }
         public object[] MessageArgs { get; private set; }
 
-        public static VerifyLogArgs From(Expression expression) => new VerifyLogArgs
+        public static VerifyLogExpressionArgs From(Expression expression) => new VerifyLogExpressionArgs
         {
             LogLevel = GetLogLevelFrom(expression),
-            Message = GetArgOf<string>(expression),
-            MessageArgs = GetArgOf<object[]>(expression),
+            Message = ExpressionInspector.GetArgOf<string>(expression),
+            MessageArgs = ExpressionInspector.GetArgOf<object[]>(expression),
             Exception = GetException(expression),
             EventId = GetEventId(expression)
         };
@@ -41,15 +40,11 @@ namespace Moq
         }
 
         private static EventId GetEventId(Expression expression) 
-            => !(GetArgExpression(expression, c => c.Type == typeof(EventId)) is ConstantExpression eventIdArgExpression)
+            => !(ExpressionInspector.GetArgExpression(expression, c => c.Type == typeof(EventId)) is ConstantExpression eventIdArgExpression)
                 ? default
                 : (EventId) eventIdArgExpression.Value;
-
-        private static T GetArgOf<T>(Expression expression) where T : class 
-            => (GetArgExpression(expression, c => c.Type == typeof(T)) as ConstantExpression)?.Value as T;
-
         private static Exception GetException(Expression expression)
-            => GetArgExpression(expression, c => typeof(Exception).IsAssignableFrom(c.Type)) switch
+            => ExpressionInspector.GetArgExpression(expression, c => typeof(Exception).IsAssignableFrom(c.Type)) switch
             {
                 ConstantExpression constantExceptionExpression => constantExceptionExpression.Value as Exception,
                 NewExpression newExceptionExpression => Expression.Lambda<Func<Exception>>(newExceptionExpression)
@@ -57,12 +52,5 @@ namespace Moq
                     .Invoke(),
                 _ => null
             };
-
-        private static Expression GetArgExpression(Expression expression, Func<Expression, bool> argPredicate)
-        {
-            var methodCall = (MethodCallExpression)((LambdaExpression)expression).Body;
-            var argExpression = methodCall.Arguments.FirstOrDefault(argPredicate);
-            return argExpression;
-        }
     }
 }
