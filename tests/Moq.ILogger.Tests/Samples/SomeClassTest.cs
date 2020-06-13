@@ -15,6 +15,14 @@ namespace Moq.Tests.Samples
 
         public void LoggingWarning(string name)
             => _logger.LogWarning(new ArgumentException("The given name is not ok", nameof(name)), "This operation failed, but let's log an warning only");
+
+        public void SemanticLogging()
+        {
+            var position = new { Latitude = 25, Longitude = 134 };
+            var elapsedMs = 34;
+
+            _logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+        }
     }
 
     public class SomeClassTest
@@ -50,6 +58,25 @@ namespace Moq.Tests.Samples
             loggerMock.VerifyLog(logger => logger.LogWarning(It.IsAny<EventId>(), It.IsAny<ArgumentException>(), "*failed*"));
             // ReSharper disable once NotResolvedInText
             loggerMock.VerifyLog(logger => logger.LogWarning(It.IsAny<EventId>(), new ArgumentException("The given name is not ok", "name"), "*failed*"));
+        }
+
+        [Fact]
+        public void Semantic_Logging()
+        {
+            var position = new { Latitude = 25, Longitude = 134 };
+            var elapsedMs = 34;
+            var loggerMock = new Mock<ILogger<SomeClass>>();
+            var sut = new SomeClass(loggerMock.Object);
+
+            sut.SemanticLogging();
+
+            loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs));
+            loggerMock.VerifyLog(logger => logger.LogInformation("Processed * in * ms."));
+            loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} * {Elapsed:000} ms.", position, elapsedMs));
+            //TODO  add support for It.Is for parameters
+            //loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} * {Elapsed:000} ms.", It.IsAny<It.IsAnyType>(), It.Is<int>(ms => ms > 0)));
+            //TODO  wildcard probably needs to be reanalyzed, if it should be used or not
+            //loggerMock.VerifyLog(logger => logger.LogInformation("*{@Position}*{Elapsed:000}*"));
         }
     }
 }

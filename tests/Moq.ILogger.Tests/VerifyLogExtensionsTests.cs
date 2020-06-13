@@ -99,14 +99,26 @@ namespace Moq.Tests
         }
 
         [Fact]
-        public void Verify_a_formatted_log_message_it_verifies()
+        public void Verify_a_formatted_log_message_and_the_param_it_verifies()
         {
             var loggerMock = new Mock<ILogger>();
             loggerMock.Object.LogInformation("Test message {0}", 1);
 
-            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test message 1"));
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test message {0}", 1));
 
             act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Verify_a_formatted_log_message_and_with_different_param_it_throws()
+        {
+            var loggerMock = new Mock<ILogger>();
+            loggerMock.Object.LogInformation("Test message {0}", 1);
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test message {0}", 2));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*.LogInformation(\"Test message {0}\")*1*");
         }
 
         [Fact]
@@ -164,7 +176,7 @@ namespace Moq.Tests
             var elapsedMs = 34;
             loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
 
-            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms."));
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, 34));
 
             act.Should().NotThrow();
         }
@@ -180,6 +192,20 @@ namespace Moq.Tests
             Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed * in * ms."));
 
             act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Verify_a_structured_message_when_parameters_differ_it_throws()
+        {
+            var loggerMock = new Mock<ILogger>();
+            var position = new { Latitude = 0, Longitude = 0 };
+            var elapsedMs = 0;
+            loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, 34));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*.LogInformation*");
         }
 
         [Fact]
@@ -204,7 +230,7 @@ namespace Moq.Tests
 
             act.Should().ThrowExactly<VerifyLogException>()
                 .WithMessage("*.LogInformation(\"\")*" +
-                             "logger => logger.Log<It.IsAnyType>(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => VerifyLogExtensions.CompareMessages(v.ToString(), \"Not a test message\")), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
+                             "logger => logger.Log<It.IsAnyType>(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => VerifyLogExtensions.CompareMessages(v.ToString(), VerifyLogExpression, \"Not a test message\")), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
         }
         string GetNotAMessage() => "Not a test message";
 
@@ -218,7 +244,7 @@ namespace Moq.Tests
 
             act.Should().ThrowExactly<VerifyLogException>()
                 .WithMessage("*.LogInformation(\"\")*" +
-                             "logger => logger.Log<It.IsAnyType>(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => VerifyLogExtensions.CompareMessages(v.ToString(), \"a\")), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
+                             "logger => logger.Log<It.IsAnyType>(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => VerifyLogExtensions.CompareMessages(v.ToString(), VerifyLogExpression, \"a\")), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
         }
 
 

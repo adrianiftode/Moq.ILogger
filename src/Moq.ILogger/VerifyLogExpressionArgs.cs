@@ -17,7 +17,7 @@ namespace Moq
         {
             LogLevel = GetLogLevelFrom(expression),
             Message = ExpressionInspector.GetArgOf<string>(expression),
-            MessageArgs = ExpressionInspector.GetArgOf<object[]>(expression),
+            MessageArgs = Expression.Lambda<Func<object[]>>(ExpressionInspector.GetArgExpressionOf<object[]>(expression)).Compile()(),
             Exception = GetException(expression),
             EventId = GetEventId(expression)
         };

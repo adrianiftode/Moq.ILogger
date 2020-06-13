@@ -1,8 +1,10 @@
 ﻿//https://github.com/dotnet/runtime/blob/e3ffd343ad5bd3a999cb9515f59e6e7a777b2c34/src/libraries/Microsoft.Extensions.Logging.Abstractions/src/LoggerExtensions.cs
 using Microsoft.Extensions.Logging;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using System.Text.RegularExpressions;
 
 // ReSharper disable once CheckNamespace
@@ -303,7 +305,8 @@ namespace Moq
                 case ConstantExpression messageArgConstant:
                     {
                         var messageConstantExpression = Expression.Constant(messageArgConstant.Value, typeof(string));
-                        var compareMessagesCallExpression = Expression.Call(typeof(VerifyLogExtensions), nameof(CompareMessages), null, messageConstantExpression, vParam);
+                        var verifyLogConstantExpression = Expression.Constant(verifyLogExpression, typeof(VerifyLogExpression));
+                        var compareMessagesCallExpression = Expression.Call(typeof(VerifyLogExtensions), nameof(CompareMessages), null, messageConstantExpression, verifyLogConstantExpression, vParam);
                         compareExpression = Expression.Lambda<Func<object, Type, bool>>(compareMessagesCallExpression, vParam, tParam);
                         break;
                     }
@@ -381,8 +384,10 @@ namespace Moq
             Expression<Func<object, Type, bool>> CreateCompareLambdaFrom(Expression methodCallExpression)
             {
                 var vParamToStringExpression = Expression.Call(vParam, typeof(object).GetMethod(nameof(ToString))!);
+                var verifyLogConstantExpression = Expression.Constant(verifyLogExpression, typeof(VerifyLogExpression));
+
                 var compareMessagesCallExpression = Expression.Call(typeof(VerifyLogExtensions), nameof(CompareMessages), null,
-                    vParamToStringExpression, methodCallExpression);
+                    vParamToStringExpression, verifyLogConstantExpression, methodCallExpression);
                 compareExpression = Expression.Lambda<Func<object, Type, bool>>(compareMessagesCallExpression, vParam, tParam);
                 return compareExpression;
             }
@@ -448,19 +453,43 @@ namespace Moq
             return exceptionA.Message == exceptionB.Message && exceptionA.GetType() == exceptionB.GetType();
         }
 
-        private static bool CompareMessages(string message, object v)
+        private static bool CompareMessages(string expectedMessageFormat, VerifyLogExpression verifyLogExpression, object actualMessageValues)
         {
-            if (message == null && v.ToString() == NullMessageFormatted)
+            var actualMessageFormatted = actualMessageValues.ToString();
+
+            if (expectedMessageFormat == null && actualMessageFormatted == NullMessageFormatted)
             {
                 return true;
             }
 
-            if (message == null || v.ToString() == NullMessageFormatted)
+            if (expectedMessageFormat == null || actualMessageFormatted == NullMessageFormatted)
             {
                 return false;
             }
 
-            return v.ToString().IsWildcardMatch(message);
+            if (!(actualMessageValues is IReadOnlyList<KeyValuePair<string, object>>))
+            {
+                return actualMessageFormatted.IsWildcardMatch(expectedMessageFormat);
+            }
+
+            var actualMessage = (IReadOnlyList<KeyValuePair<string, object>>)actualMessageValues;
+            var actualMessageFormat = actualMessage.First(c => c.Key == "{OriginalFormat}").Value.ToString();
+            var matchingFormats = actualMessageFormat.IsWildcardMatch(expectedMessageFormat);
+            var expectedMessageFormatted = FormatLogValues(expectedMessageFormat, verifyLogExpression.Args.MessageArgs);
+            var matchingFormattedMessages = string.Equals(actualMessageFormatted, expectedMessageFormatted, StringComparison.OrdinalIgnoreCase);
+            var wildcardMatch = actualMessageFormatted.IsWildcardMatch(expectedMessageFormatted);
+            return matchingFormats && matchingFormattedMessages || wildcardMatch;
+        }
+
+        private static string FormatLogValues(string format, object[] arguments)
+        {
+            var formattedLogValuesType = typeof(LoggerExtensions).Assembly.GetTypes()
+                .First(c => c.Name == "FormattedLogValues");
+
+            var formattedLogValues = Activator.CreateInstance(formattedLogValuesType,
+                BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Public, null, new object[] { format, arguments },
+                null);
+            return formattedLogValues.ToString();
         }
 
         private static Expression BuildItIsAnyExpression<T>()
