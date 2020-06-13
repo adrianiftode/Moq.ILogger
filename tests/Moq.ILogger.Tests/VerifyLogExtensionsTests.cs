@@ -72,7 +72,7 @@ namespace Moq.Tests
             Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test message"));
 
             act.Should().ThrowExactly<VerifyLogException>()
-                .WithMessage("*.LogInformation(\"Test message\")*");
+                .WithMessage("*.LogInformation(\"Test message\"*");
         }
 
         [Fact]
@@ -84,7 +84,7 @@ namespace Moq.Tests
             Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("A different message"));
 
             act.Should().ThrowExactly<VerifyLogException>()
-                .WithMessage("*.LogInformation(\"A different message\")*");
+                .WithMessage("*.LogInformation(\"A different message\"*");
         }
 
         [Fact]
@@ -118,7 +118,7 @@ namespace Moq.Tests
             Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test message {0}", 2));
 
             act.Should().ThrowExactly<VerifyLogException>()
-                .WithMessage("*.LogInformation(\"Test message {0}\")*1*");
+                .WithMessage("*.LogInformation(\"Test message {0}\"*2*");
         }
 
         [Fact]
@@ -130,7 +130,7 @@ namespace Moq.Tests
             Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test message 2"));
 
             act.Should().ThrowExactly<VerifyLogException>()
-                .WithMessage("*.LogInformation(\"Test message 2\")*");
+                .WithMessage("*.LogInformation(\"Test message 2\"*");
         }
 
         [Fact]
@@ -153,7 +153,7 @@ namespace Moq.Tests
             Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test*something"));
 
             act.Should().ThrowExactly<VerifyLogException>()
-                .WithMessage("*.LogInformation(\"Test*something\")*");
+                .WithMessage("*.LogInformation(\"Test*something\"*");
         }
 
         [Fact]
@@ -165,7 +165,7 @@ namespace Moq.Tests
             Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Test message"));
 
             act.Should().ThrowExactly<VerifyLogException>()
-                .WithMessage("*.LogInformation(\"Test message\")*");
+                .WithMessage("*.LogInformation(\"Test message\"*");
         }
 
         [Fact]
@@ -229,8 +229,8 @@ namespace Moq.Tests
             Action act = () => loggerMock.VerifyLog(c => c.LogInformation(GetNotAMessage()));
 
             act.Should().ThrowExactly<VerifyLogException>()
-                .WithMessage("*.LogInformation(\"\")*" +
-                             "logger => logger.Log<It.IsAnyType>(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => VerifyLogExtensions.CompareMessages(v.ToString(), VerifyLogExpression, \"Not a test message\")), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
+                .WithMessage("*.LogInformation(VerifyLogExtensionsTests.GetNotAMessage(), new[] {  })*")
+                .Which.InnerException!.Message.Should().Match("*logger => logger.Log<It.IsAnyType>(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => VerifyLogExtensions.CompareMessages(v.ToString(), VerifyLogExpression, \"Not a test message\")), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
         }
         string GetNotAMessage() => "Not a test message";
 
@@ -243,10 +243,9 @@ namespace Moq.Tests
             Action act = () => loggerMock.VerifyLog(c => c.LogInformation(new string(new[] { 'a' })));
 
             act.Should().ThrowExactly<VerifyLogException>()
-                .WithMessage("*.LogInformation(\"\")*" +
-                             "logger => logger.Log<It.IsAnyType>(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => VerifyLogExtensions.CompareMessages(v.ToString(), VerifyLogExpression, \"a\")), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
+                .WithMessage("*.LogInformation(new string(new[] { a }), new[] {  })*")
+                .Which.InnerException!.Message.Should().Match("*logger => logger.Log<It.IsAnyType>(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => VerifyLogExtensions.CompareMessages(v.ToString(), VerifyLogExpression, \"a\")), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
         }
-
 
         [Fact]
         public void Verify_an_error_is_logged_it_verifies()
@@ -279,7 +278,7 @@ namespace Moq.Tests
             Action act = () => loggerMock.VerifyLog(c => c.LogWarning(It.Is<Exception>(e => e.Message == "Some different message."), "Test message"));
 
             act.Should().ThrowExactly<VerifyLogException>()
-                .WithMessage("*.LogWarning(\"Test message\")*Some different message*");
+                .WithMessage("*.LogWarning(It.Is<Exception>(e => e.Message == \"Some different message.\"), \"Test message\", new[] {  })*");
         }
 
         [Fact]
@@ -313,8 +312,8 @@ namespace Moq.Tests
             Action act = () => loggerMock.VerifyLog(c => c.LogWarning(null, It.IsAny<string>()));
 
             act.Should().ThrowExactly<VerifyLogException>()
-                .WithMessage("*.LogWarning(\"\")*" +
-                             "logger => logger.Log<It.IsAnyType>(LogLevel.Warning, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => True), null, (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
+                .WithMessage("*.LogWarning(null*")
+                .Which.InnerException!.Message.Should().Match("*logger => logger.Log<It.IsAnyType>(LogLevel.Warning, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => True), null, (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
         }
 
         [Fact]
@@ -348,7 +347,7 @@ namespace Moq.Tests
             Action act = () => loggerMock.VerifyLog(c => c.LogInformation(It.Is<string>(msg => msg.Contains("Expecting something else"))));
 
             act.Should().ThrowExactly<VerifyLogException>()
-                .WithMessage("*.LogInformation(\"\")*Expecting something else*");
+                .WithMessage("*.LogInformation(It.Is<string>(msg => msg.Contains(\"Expecting something else\")), new[] {  })*");
         }
 
         [Fact]
@@ -371,7 +370,7 @@ namespace Moq.Tests
             Action act = () => loggerMock.VerifyLog(c => c.LogWarning(It.IsAny<Exception>(), null));
 
             act.Should().ThrowExactly<VerifyLogException>()
-               .WithMessage("*.LogWarning(\"\")*");
+               .WithMessage("*.LogWarning(It.IsAny<Exception>(), null, new[] {  })*");
         }
 
         [Fact]

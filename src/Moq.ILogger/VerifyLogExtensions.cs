@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 
 // ReSharper disable once CheckNamespace
@@ -230,7 +231,7 @@ namespace Moq
             }
             catch (MockException ex)
             {
-                throw new VerifyLogException(BuildExceptionMessage(ex, verifyLogExpression.Args), ex);
+                throw new VerifyLogException(BuildExceptionMessage(ex, expression), ex);
             }
         }
 
@@ -494,14 +495,21 @@ namespace Moq
 
         private static Expression BuildItIsAnyExpression<T>()
             => Expression.Call(typeof(It), "IsAny", new[] { typeof(T) });
+        private static string BuildExceptionMessage(MockException ex, Expression expression)
+        {
+            var stringBuilderExtensions = typeof(Mock).Assembly.GetTypes()
+                .First(c => c.Name == "StringBuilderExtensions");
+            var appendExpressionMethod =
+                stringBuilderExtensions.GetMethod("AppendExpression", BindingFlags.Static | BindingFlags.Public);
+            var stringBuilder = new StringBuilder();
+            appendExpressionMethod!.Invoke(null, new object[] { stringBuilder, expression });
+            var expressionText = stringBuilder.ToString();
 
-        private static string BuildExceptionMessage(MockException ex, VerifyLogExpressionArgs args)
-            => BuildExceptionMessage(ex, args.LogLevel, args.Message);
+            var moqIndications = ex.Message.Split(':')[0];
 
-        private static string BuildExceptionMessage(MockException ex, LogLevel level, string message)
-            => $"Expected an invocation on the .Log{level}(\"{message}\"), but was never performed." +
-                                $"{Environment.NewLine}" +
-                                $"{Environment.NewLine}" +
-                                $"{ex}";
+            return $"{moqIndications}: {expressionText}" +
+                   $"{Environment.NewLine}" +
+                   $"{Environment.NewLine}";
+        }
     }
 }
