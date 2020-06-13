@@ -183,6 +183,46 @@ namespace Moq.Tests
         }
 
         [Fact]
+        public void Verify_a_message_with_method_call_it_verifies()
+        {
+            var loggerMock = new Mock<ILogger<object>>();
+            loggerMock.Object.LogInformation("Test message");
+
+            Action act = () => loggerMock.VerifyLog(c => c.LogInformation(GetMessage()));
+
+            act.Should().NotThrow();
+        }
+        string GetMessage() => "Test message";
+
+        [Fact]
+        public void Verify_a_message_with_a_different_one_from_a_method_call_it_throws()
+        {
+            var loggerMock = new Mock<ILogger<object>>();
+            loggerMock.Object.LogInformation("Test message");
+
+            Action act = () => loggerMock.VerifyLog(c => c.LogInformation(GetNotAMessage()));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*.LogInformation(\"\")*" +
+                             "logger => logger.Log<It.IsAnyType>(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => VerifyLogExtensions.CompareMessages(v.ToString(), \"Not a test message\")), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
+        }
+        string GetNotAMessage() => "Not a test message";
+
+        [Fact]
+        public void Verify_a_message_one_constructed_call_it_throws()
+        {
+            var loggerMock = new Mock<ILogger<object>>();
+            loggerMock.Object.LogInformation("Test message");
+
+            Action act = () => loggerMock.VerifyLog(c => c.LogInformation(new string(new []{'a'})));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*.LogInformation(\"\")*" +
+                             "logger => logger.Log<It.IsAnyType>(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => VerifyLogExtensions.CompareMessages(v.ToString(), \"a\")), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
+        }
+
+
+        [Fact]
         public void Verify_an_error_is_logged_it_verifies()
         {
             var loggerMock = new Mock<ILogger>();
@@ -225,6 +265,30 @@ namespace Moq.Tests
             Action act = () => loggerMock.VerifyLog(c => c.LogWarning(It.IsAny<Exception>(), It.IsAny<string>()));
 
             act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Verify_null_error_any_message_it_verifies()
+        {
+            var loggerMock = new Mock<ILogger>();
+            loggerMock.Object.LogWarning(null, "Test message");
+
+            Action act = () => loggerMock.VerifyLog(c => c.LogWarning(null, It.IsAny<string>()));
+
+            act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Verify_null_error_any_message_when_error_is_logged_it_throws()
+        {
+            var loggerMock = new Mock<ILogger>();
+            loggerMock.Object.LogWarning(new Exception("Some error message."), "Test message");
+
+            Action act = () => loggerMock.VerifyLog(c => c.LogWarning(null, It.IsAny<string>()));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*.LogWarning(\"\")*" +
+                             "logger => logger.Log<It.IsAnyType>(LogLevel.Warning, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => True), null, (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
         }
 
         [Fact]

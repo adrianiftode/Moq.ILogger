@@ -8,18 +8,18 @@ namespace Moq
     internal class VerifyLogExpression
     {
         public VerifyLogExpressionArgs Args { get; private set; }
-        public Expression Message { get; private set; }
-        public Expression Exception { get; private set; }
-        public Expression EventId { get; private set; }
-        public Expression MessageArgs { get; private set; }
+        public Expression MessageExpression { get; private set; }
+        public Expression ExceptionExpression { get; private set; }
+        public Expression EventIdExpression { get; private set; }
+        public Expression MessageArgsExpression { get; private set; }
 
         public static VerifyLogExpression From(Expression expression) =>
             new VerifyLogExpression
             {
-                Exception = ExpressionInspector.GetArgExpression(expression, c => typeof(Exception).IsAssignableFrom(c.Type)),
-                EventId = ExpressionInspector.GetArgExpressionOf<EventId>(expression),
-                Message = ExpressionInspector.GetArgExpressionOf<string>(expression),
-                MessageArgs = ExpressionInspector.GetArgExpressionOf<object[]>(expression),
+                ExceptionExpression = ExpressionInspector.GetArgExpression(expression, c => typeof(Exception).IsAssignableFrom(c.Type)),
+                EventIdExpression = ExpressionInspector.GetArgExpressionOf<EventId>(expression),
+                MessageExpression = ExpressionInspector.GetArgExpressionOf<string>(expression),
+                MessageArgsExpression = ExpressionInspector.GetArgExpressionOf<object[]>(expression),
                 Args = VerifyLogExpressionArgs.From(expression)
             };
     }

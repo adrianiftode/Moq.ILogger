@@ -1,7 +1,5 @@
 # Moq.ILogger
-Easy verify ILogger mocks
-
-This is a [*Moq*](https://github.com/Moq/moq4/wiki/Quickstart) extension for *ILogger* in order help you to speed up the **Verify** (Assert) part and to extract enough information when **Fail** happens, so less time in debugging is spent.
+This is a [*Moq*](https://github.com/Moq/moq4/wiki/Quickstart) extension for *ILogger* in order to **Verify** the SUT interactions with the `ILogger` extensions using all the Moq goodies.
 
 [![Build status](https://ci.appveyor.com/api/projects/status/iixn0pkeuuov1rwb/branch/master?svg=true)](https://ci.appveyor.com/project/adrianiftode/moq-ilogger/branch/master)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Moq.ILogger&metric=alert_status)](https://sonarcloud.io/dashboard?id=Moq.ILogger)
@@ -10,7 +8,7 @@ This is a [*Moq*](https://github.com/Moq/moq4/wiki/Quickstart) extension for *IL
 ## Nuget
 This package is stil in preview mode
 
-PM&gt; Install-Package ILogger.Moq
+**PM&gt; Install-Package ILogger.Moq**
 
 ## Examples
 
@@ -30,7 +28,7 @@ public class SomeClass
 }
 ```
 
-You can verify the interactions with the `ILogger` extensions by actually using all Moq goodies
+Then the following interactions with the `ILogger` can be used.  
 
 ```csharp
 [Fact]
@@ -66,19 +64,22 @@ public void Verify_errors()
     loggerMock.VerifyLog(logger => logger.LogWarning(It.IsAny<EventId>(), new ArgumentException("The given name is not ok", "name"), "*failed*"));
 }
 ```
-
-Notice the *VerifyLog* method is used and not *Verify*. If you `Verify` instead of `VerifyLog` you will get an Moq exception with the message `Invalid verify on an extension method`.
+The verification expressions use the *ILogger* extensions methods which is not normally possible with **Moq**.
+Notice the *VerifyLog* method is used and not *Verify*. 
+If you use `Verify` instead of `VerifyLog` you would get a Moq exception with the following message `Invalid verify on an extension method`.
 
 ## Why
-Moq cannot verify extension methods calls so you'll have to check the extension implementation and see what is actually called.
-You would get an error like the one bellow.
-This package translates the given `VerifyLog` expression into one that Moq can use to verify the `ILogger.Log` signature.
+Moq cannot verify extension methods calls so you'll have to check the extension implementation and see what is actually called, then write the Moq Verify expression based on the implementation.
+
+This package translates the given `VerifyLog` expression into one useful for Moq so it can pass it to the `ILogger.Log` method, which is part of the `ILogger` definition, and not an instance method.
+
+When an extension method is passed to Moq, then an exception like the following one it is raise.
 ```
   Message: 
     System.NotSupportedException : Invalid verify on an extension method: logger => logger.LogInformation("User is not authorized {user}", new[] {  })
   Stack Trace: 
-    Mock.ThrowIfVerifyExpressionInvolvesUnsupportedMember(Expression verify, MethodInfo method) line 780
-    Mock.VerifyVoid(Mock mock, LambdaExpression expression, Times times, String failMessage) line 276
-    Mock`1.Verify(Expression`1 expression) line 408
-    AuthorizationTests.When_user_is_not_authorized_a_warning_containing_the_user_identity_is_logged() line 28
+    Mock.ThrowIfVerifyExpressionInvolvesUnsupportedMember(Expression verify, MethodInfo method)
+    Mock.VerifyVoid(Mock mock, LambdaExpression expression, Times times, String failMessage)
+    Mock`1.Verify(Expression`1 expression)
+    AuthorizationTests.When_user_is_not_authorized_a_warning_containing_the_user_identity_is_logged()
 ```
