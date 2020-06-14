@@ -476,52 +476,46 @@ namespace Moq
             {
                 return actualMessageFormatted.IsWildcardMatch(expectedMessageFormat);
             }
-            
-            var expectedMessageFormatIsWildcard = expectedMessageFormat.IsWildcard();
-            var hasExpectedArguments = verifyLogExpression.HasExpectedMessageArgs;
-            var actualMessage = (IReadOnlyList<KeyValuePair<string, object>>)actualMessageValues;
-            var actualMessageFormat = actualMessage.First(c => c.Key == OriginalFormat).Value.ToString();
-            var actualMessageArgs = actualMessage.Where(c => c.Key != OriginalFormat).Select(c => c.Value).ToArray();
+
+            var (actualMessageFormat, actualMessageArgs) = ExtractActualMessageFormatAndArgs(actualMessageValues);
             var (expectedMessageFormattedWithSuccess, expectedMessageFormatted) = TryFormatLogValues(expectedMessageFormat, verifyLogExpression.Args.MessageArgs);
-            
-            if (expectedMessageFormatIsWildcard)
+
+            if (expectedMessageFormat.IsWildcard())
             {
-                if (hasExpectedArguments)
+                if (verifyLogExpression.HasExpectedMessageArgs)
                 {
                     return actualMessageFormat.IsWildcardMatch(expectedMessageFormat) && MessageArgsMatch(verifyLogExpression.MessageArgsExpression, actualMessageArgs);
                 }
 
-                if (actualMessageFormat.IsWildcardMatch(expectedMessageFormat))
-                {
-                    return true;
-                }
-
-                if (expectedMessageFormattedWithSuccess &&
-                    actualMessageFormatted.IsWildcardMatch(expectedMessageFormatted))
+                if (actualMessageFormat.IsWildcardMatch(expectedMessageFormat)
+                    || expectedMessageFormattedWithSuccess && actualMessageFormatted.IsWildcardMatch(expectedMessageFormatted))
                 {
                     return true;
                 }
             }
             else
             {
-                if (hasExpectedArguments)
+                if (verifyLogExpression.HasExpectedMessageArgs)
                 {
                     return actualMessageFormat.EqualsIgnoreCase(expectedMessageFormat) && MessageArgsMatch(verifyLogExpression.MessageArgsExpression, actualMessageArgs);
                 }
 
-                if (actualMessageFormat.EqualsIgnoreCase(expectedMessageFormat))
-                {
-                    return true;
-                }
-
-                if (expectedMessageFormattedWithSuccess &&
-                    actualMessageFormatted.EqualsIgnoreCase(expectedMessageFormatted))
+                if (actualMessageFormat.EqualsIgnoreCase(expectedMessageFormat)
+                    || expectedMessageFormattedWithSuccess && actualMessageFormatted.EqualsIgnoreCase(expectedMessageFormatted))
                 {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        private static (string fromat, object[] args) ExtractActualMessageFormatAndArgs(object actualMessageValues)
+        {
+            var actualMessage = (IReadOnlyList<KeyValuePair<string, object>>)actualMessageValues;
+            var actualMessageFormat = actualMessage.First(c => c.Key == OriginalFormat).Value.ToString();
+            var actualMessageArgs = actualMessage.Where(c => c.Key != OriginalFormat).Select(c => c.Value).ToArray();
+            return (actualMessageFormat, actualMessageArgs);
         }
 
         private static (bool success, string formatted) TryFormatLogValues(string format, object[] arguments)
@@ -568,11 +562,11 @@ namespace Moq
 
             var matcherFactoryType = typeof(Mock).Assembly.GetTypes().First(c => c.Name == "MatcherFactory");
             var createMatcherMethod =
-                matcherFactoryType.GetMethod("CreateMatcher", BindingFlags.Static | BindingFlags.Public, null, new [] { typeof(Expression), typeof(ParameterInfo) }, null);
-            
+                matcherFactoryType.GetMethod("CreateMatcher", BindingFlags.Static | BindingFlags.Public, null, new[] { typeof(Expression), typeof(ParameterInfo) }, null);
+
             // result is typeof(Pair<IMatcher, Expression>); Pair is a type from Moq, having two fields Item1, Item2
             // we need Item1
-            var matcherResult = createMatcherMethod!.Invoke(null, new object[] { ((MethodCallExpression)methodCallLambda.Body).Arguments.Single(), parameter});
+            var matcherResult = createMatcherMethod!.Invoke(null, new object[] { ((MethodCallExpression)methodCallLambda.Body).Arguments.Single(), parameter });
             var resultType = matcherResult.GetType();
             var matcherField = resultType.GetField("Item1");
             var matcher = matcherField.GetValue(matcherResult);
@@ -581,7 +575,7 @@ namespace Moq
             // invoke matcher.Matches(actualArgs, typeof(object[]))
             var matchesMethod =
                 matcherType.GetMethod("Matches", BindingFlags.Instance | BindingFlags.Public, null, new[] { typeof(object[]), typeof(Type) }, null);
-            var isMatch = (bool)matchesMethod!.Invoke(matcher, new object[] {actualArgs, typeof(object[])});
+            var isMatch = (bool)matchesMethod!.Invoke(matcher, new object[] { actualArgs, typeof(object[]) });
             return isMatch;
         }
 
@@ -603,5 +597,5 @@ namespace Moq
     }
 
     internal interface IX { void Method(params object[] args); }
-    internal class X : IX { public void Method(params object[] args) {} }
+    internal class X : IX { public void Method(params object[] args) { throw new NotSupportedException("This method should never be called, only inspected."); } }
 }
