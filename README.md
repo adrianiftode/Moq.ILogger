@@ -1,12 +1,12 @@
 # Moq.ILogger
-This is a [*Moq*](https://github.com/Moq/moq4/wiki/Quickstart) extension for *ILogger* in order to **Verify** the SUT interactions with the `ILogger` extensions using all the **Moq** goodies.
+
+Enables the [*Moq's*](https://github.com/Moq/moq4/wiki/Quickstart) **Verify** API over the **ILogger** extensions (LogInformation, LogError, etc).
 
 [![Build status](https://ci.appveyor.com/api/projects/status/iixn0pkeuuov1rwb/branch/master?svg=true)](https://ci.appveyor.com/project/adrianiftode/moq-ilogger/branch/master)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=Moq.ILogger&metric=alert_status)](https://sonarcloud.io/dashboard?id=Moq.ILogger)
 [![NuGet](https://img.shields.io/nuget/v/ILogger.Moq.svg)](https://www.nuget.org/packages/ILogger.Moq)
 
 ## Nuget
-This package is stil in preview mode
 
 **PM&gt; Install-Package ILogger.Moq**
 
@@ -37,7 +37,7 @@ public class SomeClass
 }
 ```
 
-Then the such SUT-`ILogger` interactions with can be verified:
+Then interactions like the ones bellow can be asserted:
 
 ```csharp
 [Fact]
@@ -88,16 +88,13 @@ public void Verify_errors()
 }
 
 ```
-It is expected for the `VefifyLog` expression to use *ILogger* extensions methods, which is not normally possible with **Moq**.
-Also notice the `VerifyLog` method is used and not the usual *Verify* method from **Moq**. 
-If you use *Verify* instead of `VerifyLog` you'll then get a **Moq** exception with the following message `Invalid verify on an extension method`.
+It is expected for the `VefifyLog` expression to contain *ILogger* extensions methods, which is not possible with **Moq**.
+If you use *Verify*, which is part of the **Moq** library, instead of the `VerifyLog` method, then you'll then get a **Moq** exception with the following message `Invalid verify on an extension method`.
 
 ## Why
-**Moq** cannot verify extension methods calls so you'll have to check the extension implementation and see what is actually called, then write the Moq Verify expression based on the implementation.
+**Moq** cannot verify extension methods calls, as in essence these are static classes and cannot be mocked, so you'll have to check the extension implementation and see what is actually called. Once you figure out, then you have to write the **Moq** *Verify* expression based on the extension's implementation as you have to see which interface method is hit.
 
-This package translates the given `VerifyLog` expression into one useful for **Moq** so it can pass it to the `ILogger.Log` method, which is part of the `ILogger` definition, and not an instance method.
-
-When an extension method is passed to **Moq**, then an exception like the following one is raised.
+When an extension method is passed to **Moq**, then an exception like the following one is raised:
 ```
   Message: 
     System.NotSupportedException : Invalid verify on an extension method: logger => logger.LogInformation("User is not authorized {user}", new[] {  })
@@ -108,11 +105,20 @@ When an extension method is passed to **Moq**, then an exception like the follow
     AuthorizationTests.When_user_is_not_authorized_a_warning_containing_the_user_identity_is_logged()
 ```
 
+This package translates the given `VerifyLog` expression into one expected by the `ILogger.Log` method, which is the actual method that is called by the [LoggerExtensions](https://github.com/dotnet/runtime/blob/e3ffd343ad5bd3a999cb9515f59e6e7a777b2c34/src/libraries/Microsoft.Extensions.Logging.Abstractions/src/LoggerExtensions.cs) class.
+
+There are three main benefits using this package:
+- it is easier to verify the interaction with ILogger;
+- the verification in tests are alike the SUT's implementation;
+- facilitates the investigation of the failed tests.
+
+
 ## Failed test messages
 
 When a test fails because the SUT does not behave as specified in the *VerifyLog* setup, then the message will contain a representation of the `VerifyLog` expression and also the original **Moq** exception message.
 
-This is a failed test example that displays the expression with the expected setup, and then the original Moq exception.
+This is a failed test example that displays the VerifyLog expression with the expected setup, followed by the original Moq exception.
+
 ```
  Moq.Tests.Samples.SomeClassTest.Verify_semantic_logging
    Source: SomeClassTest.cs line 64

@@ -10,8 +10,8 @@
   <PropertyGroup>
     <PackageId>ILogger.Moq</PackageId>
     <Authors>Adrian Iftode</Authors>
-    <PackageDescription>Verify the SUT interactions with the `ILogger` extensions using all the Moq goodies.</PackageDescription>
-    <PackageTags>Moq;ILogger;ILoggerExtensions;unit;unittest</PackageTags>
+    <PackageDescription>Enables the Moq's Verify API over the *ILogger* extensions (LogInformation, LogError, etc).</PackageDescription>
+    <PackageTags>Moq;ILogger;ILoggerExtensions;unit;unittest;logging</PackageTags>
     <VersionPrefix>0.0.1</VersionPrefix>
     <PackageProjectUrl>https://github.com/adrianiftode/Moq.ILogger</PackageProjectUrl>
     <RepositoryUrl>https://github.com/adrianiftode/Moq.ILogger</RepositoryUrl>
