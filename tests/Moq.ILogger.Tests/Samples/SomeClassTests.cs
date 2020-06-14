@@ -36,6 +36,7 @@ namespace Moq.Tests.Samples
             sut.LoggingInformation();
 
             loggerMock.VerifyLog(logger => logger.LogInformation("This operation is successful."));
+            loggerMock.VerifyLog(logger => logger.LogInformation((EventId)0,"This operation is successful."));
             loggerMock.VerifyLog(logger => logger.LogInformation("This * is successful."));
             loggerMock.VerifyLog(logger => logger.LogInformation(It.Is<string>(msg => msg.Length > 5)));
             loggerMock.VerifyLog(logger => logger.LogInformation(It.IsAny<string>()));
@@ -54,7 +55,7 @@ namespace Moq.Tests.Samples
             loggerMock.VerifyLog(logger => logger.LogWarning(It.IsAny<ArgumentException>(), It.IsAny<string>()));
             loggerMock.VerifyLog(logger => logger.LogWarning(It.Is<ArgumentException>(ex => ex.ParamName == "name"), "*failed*"));
             // ReSharper disable once RedundantCast
-            loggerMock.VerifyLog(logger => logger.LogWarning((EventId)10, It.IsAny<ArgumentException>(), "*failed*"));
+            loggerMock.VerifyLog(logger => logger.LogWarning((EventId)0, It.IsAny<ArgumentException>(), "*failed*"));
             loggerMock.VerifyLog(logger => logger.LogWarning(It.IsAny<EventId>(), It.IsAny<ArgumentException>(), "*failed*"));
             // ReSharper disable once NotResolvedInText
             loggerMock.VerifyLog(logger => logger.LogWarning(It.IsAny<EventId>(), new ArgumentException("The given name is not ok", "name"), "*failed*"));

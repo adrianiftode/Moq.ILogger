@@ -568,6 +568,52 @@ namespace Moq.Tests
         }
 
         [Fact]
+        public void Verify_event_id_is_logged_it_verifies()
+        {
+            var loggerMock = new Mock<ILogger>();
+            loggerMock.Object.LogInformation(new EventId(10, "Order"), "Test message");
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation(new EventId(10, "Order"), "Test message"));
+
+            act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Verify_event_id_is_logged_when_mismatch_it_throws()
+        {
+            var loggerMock = new Mock<ILogger>();
+            loggerMock.Object.LogInformation((EventId)10, "Test message");
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation((EventId)5, "Test message"));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*.LogInformation*5*");
+        }
+
+        [Fact]
+        public void Verify_event_id_is_logged_when_It_is_used_it_verifies()
+        {
+            var loggerMock = new Mock<ILogger>();
+            loggerMock.Object.LogInformation((EventId)10, "Test message");
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation(It.Is<EventId>(eid => eid.Id == 10), "Test message"));
+
+            act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Verify_event_id_is_logged_when_It_is_used_and_mismatch_it_throws()
+        {
+            var loggerMock = new Mock<ILogger>();
+            loggerMock.Object.LogInformation((EventId)10, "Test message");
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation(It.Is<EventId>(eid => eid.Id == 5), "Test message"));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*.LogInformation*5*");
+        }
+
+        [Fact]
         public void Verify_when_unsupported_extensions_are_used_it_throws()
         {
             var loggerMock = new Mock<ILogger>();

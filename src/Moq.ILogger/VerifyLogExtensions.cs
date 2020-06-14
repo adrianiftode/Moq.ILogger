@@ -238,7 +238,7 @@ namespace Moq
         private static Expression<Action<T>> CreateMoqVerifyExpressionFrom<T>(VerifyLogExpression verifyLogExpression)
         {
             var logLevelExpression = CreateLogLevelExpression(verifyLogExpression);
-            var eventIdExpression = CreateEventIdExpression();
+            var eventIdExpression = CreateEventIdExpression(verifyLogExpression);
             var exceptionExpression = CreateExceptionExpression(verifyLogExpression);
             var messageExpression = CreateMessageExpression(verifyLogExpression);
             var formatterExpression = CreateFormatterExpression();
@@ -259,15 +259,11 @@ namespace Moq
         private static Expression CreateLogLevelExpression(VerifyLogExpression verifyLogExpression)
             => Expression.Constant(verifyLogExpression.Args.LogLevel);
 
-        private static Expression CreateFormatterExpression()
-        {
-            var itIsAnyObjectExpression = BuildItIsAnyExpression<object>();
-            var formatterExpression = Expression.Convert(itIsAnyObjectExpression, typeof(Func<It.IsAnyType, Exception, string>));
-            return formatterExpression;
-        }
+        private static Expression CreateFormatterExpression() 
+            => Expression.Convert(BuildItIsAnyExpression<object>(), typeof(Func<It.IsAnyType, Exception, string>));
 
-        private static Expression CreateEventIdExpression()
-            => BuildItIsAnyExpression<EventId>();
+        private static Expression CreateEventIdExpression(VerifyLogExpression verifyLogExpression) 
+            => verifyLogExpression.EventIdExpression ?? BuildItIsAnyExpression<EventId>();
 
         private static Expression CreateExceptionExpression(VerifyLogExpression verifyLogExpression)
         {
@@ -276,21 +272,21 @@ namespace Moq
                 return BuildItIsAnyExpression<Exception>();
             }
 
-            // an Expression arg is given, create an It.Is<Exception>(e => Compare(e, arg))
             var exception = verifyLogExpression.Args.Exception;
-            if (exception != null)
+            if (exception == null)
             {
-                // build It.Is(CompareExceptions(exception)),
-                var exceptionParam = Expression.Parameter(typeof(Exception));
-                var exceptionConstantExpression = Expression.Constant(exception, typeof(Exception));
-                var compareExceptionsCallExpression = Expression.Call(typeof(VerifyLogExtensions), nameof(CompareExceptions), null, exceptionConstantExpression, exceptionParam);
-                var compareExpression = Expression.Lambda<Func<Exception, bool>>(compareExceptionsCallExpression, exceptionParam);
-                var compareExceptionQuoteExpression = Expression.Quote(compareExpression);
-                var itIsExceptionExpression = Expression.Call(typeof(It), "Is", new[] { typeof(Exception) }, compareExceptionQuoteExpression);
-                return itIsExceptionExpression;
+                return verifyLogExpression.ExceptionExpression;
             }
 
-            return verifyLogExpression.ExceptionExpression ?? BuildItIsAnyExpression<Exception>();
+            // an Expression arg is given, create an It.Is<Exception>(e => Compare(e, arg))
+            // build It.Is(CompareExceptions(exception)),
+            var exceptionParam = Expression.Parameter(typeof(Exception));
+            var exceptionConstantExpression = Expression.Constant(exception, typeof(Exception));
+            var compareExceptionsCallExpression = Expression.Call(typeof(VerifyLogExtensions), nameof(CompareExceptions), null, exceptionConstantExpression, exceptionParam);
+            var compareExpression = Expression.Lambda<Func<Exception, bool>>(compareExceptionsCallExpression, exceptionParam);
+            var compareExceptionQuoteExpression = Expression.Quote(compareExpression);
+            var itIsExceptionExpression = Expression.Call(typeof(It), "Is", new[] { typeof(Exception) }, compareExceptionQuoteExpression);
+            return itIsExceptionExpression;
         }
 
         private static MethodCallExpression CreateMessageExpression(VerifyLogExpression verifyLogExpression)
