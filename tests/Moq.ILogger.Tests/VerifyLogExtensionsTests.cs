@@ -182,6 +182,33 @@ namespace Moq.Tests
         }
 
         [Fact]
+        public void Verify_a_structured_message_when_expected_is_formatted_it_verifies()
+        {
+            var loggerMock = new Mock<ILogger>();
+            var position = new { Latitude = 25, Longitude = 134 };
+            var elapsedMs = 34;
+            loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms."));
+
+            act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Verify_a_structured_message_when_expected_is_formatted_but_has_a_parameter_it_throws()
+        {
+            var loggerMock = new Mock<ILogger>();
+            var position = new { Latitude = 25, Longitude = 134 };
+            var elapsedMs = 34;
+            loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms.", new { Latitude = 25, Longitude = 134 }));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*.LogInformation*");
+        }
+
+        [Fact]
         public void Verify_a_structured_message_using_wildcards_it_verifies()
         {
             var loggerMock = new Mock<ILogger>();
@@ -192,6 +219,72 @@ namespace Moq.Tests
             Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed * in * ms."));
 
             act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Verify_a_structured_message_using_wildcards_and_containing_parameters_names_it_verifies()
+        {
+            var loggerMock = new Mock<ILogger>();
+            var position = new { Latitude = 25, Longitude = 134 };
+            var elapsedMs = 34;
+            loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed*{@Position}*{Elapsed:000}*ms."));
+
+            act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Verify_a_structured_message_using_wildcards_and_containing_formatted_message_it_verifies()
+        {
+            var loggerMock = new Mock<ILogger>();
+            var position = new { Latitude = 25, Longitude = 134 };
+            var elapsedMs = 34;
+            loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed { Latitude = *, Longitude = * } in * ms."));
+
+            act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Verify_a_structured_message_using_wildcards_and_parameters_it_verifies()
+        {
+            var loggerMock = new Mock<ILogger>();
+            var position = new { Latitude = 25, Longitude = 134 };
+            var elapsedMs = 34;
+            loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed * in * ms.", new { Latitude = 25, Longitude = 134 }, 34));
+
+            act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Verify_a_structured_message_using_wildcards_with_parameters_names_and_parameters_it_verifies()
+        {
+            var loggerMock = new Mock<ILogger>();
+            var position = new { Latitude = 25, Longitude = 134 };
+            var elapsedMs = 34;
+            loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} * {Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, 34));
+
+            act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Verify_a_structured_message_using_wildcards_with_parameters_names_and_parameters_it_throws()
+        {
+            var loggerMock = new Mock<ILogger>();
+            var position = new { Latitude = 25, Longitude = 134 };
+            var elapsedMs = 34;
+            loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed { Latitude = *, Longitude = * } in * ms.", new { Latitude = 25, Longitude = 134 }, 34));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*.LogInformation*");
         }
 
         [Fact]
@@ -216,8 +309,7 @@ namespace Moq.Tests
             var elapsedMs = 0;
             loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
 
-            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", 
-                new { Latitude = 25, Longitude = 134 }));
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }));
 
             act.Should().ThrowExactly<VerifyLogException>()
                 .WithMessage("*.LogInformation*");
@@ -232,6 +324,33 @@ namespace Moq.Tests
             loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
 
             Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, 34, true));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*.LogInformation*");
+        }
+
+        [Fact]
+        public void Verify_a_structured_message_with_matching_It_Is_parameters_it_verifies()
+        {
+            var loggerMock = new Mock<ILogger>();
+            var position = new { Latitude = 25, Longitude = 134 };
+            var elapsedMs = 34;
+            loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", It.IsAny<It.IsAnyType>(), It.Is<int>(ms => ms == 34)));
+
+            act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Verify_a_structured_message_with_not_matching_It_Is_parameters_it_throws()
+        {
+            var loggerMock = new Mock<ILogger>();
+            var position = new { Latitude = 25, Longitude = 134 };
+            var elapsedMs = 34;
+            loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", null, It.Is<int>(ms => ms != 34)));
 
             act.Should().ThrowExactly<VerifyLogException>()
                 .WithMessage("*.LogInformation*");

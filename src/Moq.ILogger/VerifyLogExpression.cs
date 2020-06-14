@@ -12,6 +12,7 @@ namespace Moq
         public Expression ExceptionExpression { get; private set; }
         public Expression EventIdExpression { get; private set; }
         public Expression MessageArgsExpression { get; private set; }
+        public bool HasExpectedMessageArgs => ((NewArrayExpression) MessageArgsExpression).Expressions.Count > 0;
 
         public static VerifyLogExpression From(Expression expression) =>
             new VerifyLogExpression

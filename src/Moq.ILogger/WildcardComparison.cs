@@ -24,5 +24,43 @@ namespace Moq
             static string WildcardToRegular(string value)
                 => "^" + Regex.Escape(value).Replace("\\?", ".").Replace("\\*", ".*") + "$";
         }
+
+        internal static bool EqualsIgnoreCase(this string source, string other)
+        {
+            if (string.IsNullOrEmpty(source) && string.IsNullOrEmpty(other))
+            {
+                return true;
+            }
+
+            if (string.IsNullOrEmpty(source) || string.IsNullOrEmpty(other))
+            {
+                return false;
+            }
+
+            return string.Equals(source, other, StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal static bool IsWildcard(this string source)
+        {
+            if (string.IsNullOrEmpty(source))
+            {
+                return false;
+            }
+
+            if (source[0] == '*')
+            {
+                return true;
+            }
+
+            for (var i = 1; i < source.Length; i++)
+            {
+                if (source[i] == '*' && source[i - 1] != '\\')
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
     }
 }

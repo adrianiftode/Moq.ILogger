@@ -25,7 +25,7 @@ namespace Moq.Tests.Samples
         }
     }
 
-    public class SomeClassTest
+    public class SomeClassTests
     {
         [Fact]
         public void Verify_log_information_with_a_message()
@@ -68,13 +68,17 @@ namespace Moq.Tests.Samples
 
             sut.SemanticLogging();
 
+            loggerMock.VerifyLog(logger => logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms."));
+
             loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, 34));
+            loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", It.IsAny<It.IsAnyType>(), It.IsAny<int>()));
+
+            loggerMock.VerifyLog(logger => logger.LogInformation("Processed { Latitude = *, Longitude = * } in * ms."));
             loggerMock.VerifyLog(logger => logger.LogInformation("Processed * in * ms."));
-            loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} * {Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, 34));
-            //TODO  add support for It.Is for parameters
-            //loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} * {Elapsed:000} ms.", It.IsAny<It.IsAnyType>(), It.Is<int>(ms => ms > 0)));
-            //TODO  wildcard probably needs to be reanalyzed, if it should be used or not
-            //loggerMock.VerifyLog(logger => logger.LogInformation("*{@Position}*{Elapsed:000}*"));
+            loggerMock.VerifyLog(logger => logger.LogInformation("Processed*{@Position}*{Elapsed:000}*ms."));
+
+            loggerMock.VerifyLog(logger => logger.LogInformation("Processed * in * ms.", It.IsAny<It.IsAnyType>(), It.IsAny<int>()));
+            loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position}*{Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, 34));
         }
     }
 }
