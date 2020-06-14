@@ -638,6 +638,21 @@ namespace Moq.Tests
         }
 
         [Fact]
+        public void Verify_when_unexpected_error_happens_throws_an_unexpected_exception_with_an_explanatory_message()
+        {
+            var loggerMock = new Mock<ILogger>();
+            var position = new { Latitude = 25, Longitude = 134 };
+            var elapsedMs = 34;
+            loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", new { Latitude = It.Is<int>(lat => lat == 25), Longitude = 134 }, 34));
+
+            act.Should().ThrowExactly<VerifyLogUnexpectedException>()
+                .WithMessage("*https://github.com/adrianiftode/Moq.ILogger/issues/new*")
+                .WithInnerException<Exception>();
+        }
+
+        [Fact]
         public void Verify_when_unsupported_expression_is_used_it_throws()
         {
             var loggerMock = new Mock<ILogger>();

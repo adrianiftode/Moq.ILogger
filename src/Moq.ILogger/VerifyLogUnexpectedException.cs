@@ -8,38 +8,38 @@ namespace Moq
     /// Encapsulates Moq exceptions and provides extra instructions
     /// </summary>
     [Serializable]
-    public class VerifyLogException : Exception
+    public class VerifyLogUnexpectedException : Exception
     {
         /// <summary>
-        /// Default VerifyLogException constructor
+        /// Default VerifyLogUnexpectedException constructor
         /// </summary>
-        public VerifyLogException()
+        public VerifyLogUnexpectedException()
         {
         }
 
         /// <summary>
-        /// VerifyLogException constructor from a string message
+        /// VerifyLogUnexpectedException constructor from a string message
         /// </summary>
         /// <param name="message">The exception message</param>
-        public VerifyLogException(string message) : base(message)
+        public VerifyLogUnexpectedException(string message) : base(message)
         {
         }
 
         /// <summary>
-        /// VerifyLogException constructor from a string message and an inner exception
+        /// VerifyLogUnexpectedException constructor from a string message and an inner exception
         /// </summary>
         /// <param name="message">The exception message</param>
         /// <param name="innerException">The inner exception message</param>
-        public VerifyLogException(string message, Exception innerException) : base(message, innerException)
+        public VerifyLogUnexpectedException(string message, Exception innerException) : base(message, innerException)
         {
         }
 
         /// <summary>
-        /// VerifyLogException used during deserialization
+        /// VerifyLogUnexpectedException used during deserialization
         /// </summary>
         /// <param name="info">Serialization info</param>
         /// <param name="context">Serialization context</param>
-        protected VerifyLogException(SerializationInfo info, StreamingContext context) : base(info, context)
+        protected VerifyLogUnexpectedException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

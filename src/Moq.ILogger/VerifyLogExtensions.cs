@@ -212,26 +212,48 @@ namespace Moq
         private static void Verify<T>(Mock<T> loggerMock, Expression<Action<ILogger>> expression, Times? times, Func<Times> timesFunc,
             string failMessage) where T : class
         {
-            GuardVerifyExpressionIsForLoggerExtensions(expression);
-
-            var verifyLogExpression = VerifyLogExpression.From(expression);
-            var verifyExpression = CreateMoqVerifyExpressionFrom<T>(verifyLogExpression);
             try
             {
-                if (timesFunc != null)
-                {
-                    loggerMock.Verify(verifyExpression, timesFunc, failMessage);
-                }
-                else if (times.HasValue)
-                {
-                    loggerMock.Verify(verifyExpression, times.Value, failMessage);
-                }
+                GuardVerifyExpressionIsForLoggerExtensions(expression);
 
-                loggerMock.Verify(verifyExpression, failMessage);
+                var verifyLogExpression = VerifyLogExpression.From(expression);
+                var verifyExpression = CreateMoqVerifyExpressionFrom<T>(verifyLogExpression);
+                try
+                {
+                    if (timesFunc != null)
+                    {
+                        loggerMock.Verify(verifyExpression, timesFunc, failMessage);
+                    }
+                    else if (times.HasValue)
+                    {
+                        loggerMock.Verify(verifyExpression, times.Value, failMessage);
+                    }
+
+                    loggerMock.Verify(verifyExpression, failMessage);
+                }
+                catch (MockException ex)
+                {
+                    throw new VerifyLogException(BuildExceptionMessage(ex, expression), ex);
+                }
             }
-            catch (MockException ex)
+            catch (NotSupportedException nse) when (nse.Message.Contains("supports only specific Logging extensions"))
             {
-                throw new VerifyLogException(BuildExceptionMessage(ex, expression), ex);
+                throw;
+            }
+            catch (VerifyLogException)
+            {
+                throw;
+            }
+            catch (Exception exception)
+            {
+                var message = "Moq.ILogger found an unexpected exception." +
+                              Environment.NewLine +
+                              Environment.NewLine +
+                              "Please open an issue at https://github.com/adrianiftode/Moq.ILogger/issues/new, provide the exception details and a sample code if possible." +
+                              Environment.NewLine +
+                              "Bellow will follow the unexpected exception details." +
+                              Environment.NewLine;
+                throw new VerifyLogUnexpectedException(message, exception);
             }
         }
 
