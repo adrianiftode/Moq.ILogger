@@ -478,15 +478,29 @@ namespace Moq
 
             var actualMessage = (IReadOnlyList<KeyValuePair<string, object>>)actualMessageValues;
             var actualMessageFormat = actualMessage.First(c => c.Key == "{OriginalFormat}").Value.ToString();
+            var (expectedMessageFormattedWithSuccess, expectedMessageFormatted) = TryFormatLogValues(expectedMessageFormat, verifyLogExpression.Args.MessageArgs);
+            
+            var matchingFormattedMessages = expectedMessageFormattedWithSuccess && string.Equals(actualMessageFormatted, expectedMessageFormatted, StringComparison.OrdinalIgnoreCase);
+            var wildcardMatch = expectedMessageFormattedWithSuccess && actualMessageFormatted.IsWildcardMatch(expectedMessageFormatted);
             var matchingFormats = actualMessageFormat.IsWildcardMatch(expectedMessageFormat);
-            var expectedMessageFormatted = FormatLogValues(expectedMessageFormat, verifyLogExpression.Args.MessageArgs);
-            var matchingFormattedMessages = string.Equals(actualMessageFormatted, expectedMessageFormatted, StringComparison.OrdinalIgnoreCase);
-            var wildcardMatch = actualMessageFormatted.IsWildcardMatch(expectedMessageFormatted);
             return matchingFormats && matchingFormattedMessages || wildcardMatch;
+        }
+
+        private static (bool success, string formatted) TryFormatLogValues(string format, object[] arguments)
+        {
+            try
+            {
+                return (true, FormatLogValues(format, arguments));
+            }
+            catch (FormatException)
+            {
+                return (false, null);
+            }
         }
 
         private static string FormatLogValues(string format, object[] arguments)
         {
+            //https://github.com/dotnet/runtime/blob/e3ffd343ad5bd3a999cb9515f59e6e7a777b2c34/src/libraries/Microsoft.Extensions.Logging.Abstractions/src/FormattedLogValues.cs#L30
             var formattedLogValuesType = typeof(LoggerExtensions).Assembly.GetTypes()
                 .First(c => c.Name == "FormattedLogValues");
 

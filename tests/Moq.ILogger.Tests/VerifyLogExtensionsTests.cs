@@ -209,6 +209,35 @@ namespace Moq.Tests
         }
 
         [Fact]
+        public void Verify_a_structured_message_with_fewer_parameters_it_throws()
+        {
+            var loggerMock = new Mock<ILogger>();
+            var position = new { Latitude = 0, Longitude = 0 };
+            var elapsedMs = 0;
+            loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", 
+                new { Latitude = 25, Longitude = 134 }));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*.LogInformation*");
+        }
+
+        [Fact]
+        public void Verify_a_structured_message_with_more_parameters_it_throws()
+        {
+            var loggerMock = new Mock<ILogger>();
+            var position = new { Latitude = 0, Longitude = 0 };
+            var elapsedMs = 0;
+            loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, 34, true));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*.LogInformation*");
+        }
+
+        [Fact]
         public void Verify_a_message_with_method_call_it_verifies()
         {
             var loggerMock = new Mock<ILogger<object>>();
