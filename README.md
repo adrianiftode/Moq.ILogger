@@ -98,7 +98,7 @@ public void Verify_errors()
 }
 
 ```
-It is expected for the `VefifyLog` expression to contain *ILogger* extensions methods, which is not possible with **Moq**.
+It is expected for the `VerifyLog` expression to contain *ILogger* extensions methods, which is not possible with **Moq**.
 If you use *Verify*, which is part of the **Moq** library, instead of the `VerifyLog` method, then you'll then get a **Moq** exception with the following message `Invalid verify on an extension method`.
 
 ## Why
