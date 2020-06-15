@@ -23,7 +23,7 @@ namespace Moq
         /// Verifies that a specific invocation matching the given expression was performed on the ILogger mock.
         /// </summary>
         /// <param name="loggerMock">The generic ILogger mock object.</param>
-        /// <param name="expression">Expression to verify.</param>
+        /// <param name="expression">Expression to verify. See the remarks section for the supported expressions.</param>
         /// <param name="failMessage">Message to show if verification fails.</param>
         /// <exception cref="VerifyLogException">
         /// The invocation was not performed on the ILogger mock.
@@ -31,6 +31,25 @@ namespace Moq
         /// <exception cref="NotSupportedException">
         /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
         /// </exception>
+        /// <example>
+        /// <code>
+        ///     loggerMock.VerifyLog(logger =&gt; logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms."));
+        /// </code>
+        /// </example>
+        /// <remarks>
+        /// VerifyLog can interpret only .NET Core ILogger extensions, thus the expression argument must contain only LogInformation/LogDebug, etc calls.
+        /// Any argument in the method call expression can be expressed as:
+        /// <list type="bullet">
+        ///     <item>an It.Is* Moq construct: logger => logger.LogInformation(It.IsAny&lt;string&gt;()</item>
+        ///     <item>a constant: logger => logger.LogInformation("Test message")</item>
+        /// </list>
+        /// When the message argument is provided as a constant in the expression, then VerifyLog expects for the following scenarios:
+        /// <list type="bullet">
+        ///     <item>it can assume the message is the formatted one, like "Processed { Latitude = 25, Longitude = 134 } in 034 ms.". If so, VerifyLog transforms each ILogger.Log invocation and compares the result with the given message</item>
+        ///     <item>it can assume the message is the actual message format, like "Processed {@Position} in {Elapsed:000} ms.". If so, it compares the message with the message formats encountered during each ILogger.Log invocation and also evaluates the invocations arguments to be as the ones provided in the VerifyLog expression</item>
+        ///     <item>it can interpret wildcard messages, like "Processed { Latitude = *, Longitude = * } in * ms." or "Processed {@Position}*{Elapsed:000} ms.". If so, it compares the wildcard message with either the messages formats or the transformed messages encountered during each ILogger.Log invocation. When the message is the actual format and the format arguments are provided, then these are compared too.</item>
+        /// </list>
+        /// </remarks>
         public static void VerifyLog(this Mock<ILogger> loggerMock, Expression<Action<ILogger>> expression, string failMessage)
             => Verify(loggerMock, expression, null, null, failMessage);
 
@@ -38,7 +57,7 @@ namespace Moq
         /// Verifies that a specific invocation matching the given expression was performed on the ILogger mock.
         /// </summary>
         /// <param name="loggerMock">The generic ILogger mock object.</param>
-        /// <param name="expression">Expression to verify.</param>
+        /// <param name="expression">Expression to verify. See the remarks section for the supported expressions.</param>
         /// <param name="times">The number of times a method is expected to be called.</param>
         /// <exception cref="VerifyLogException">
         /// The invocation was not performed on the ILogger mock.
@@ -46,6 +65,25 @@ namespace Moq
         /// <exception cref="NotSupportedException">
         /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
         /// </exception>
+        /// <example>
+        /// <code>
+        ///     loggerMock.VerifyLog(logger =&gt; logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms."));
+        /// </code>
+        /// </example>
+        /// <remarks>
+        /// VerifyLog can interpret only .NET Core ILogger extensions, thus the expression argument must contain only LogInformation/LogDebug, etc calls.
+        /// Any argument in the method call expression can be expressed as:
+        /// <list type="bullet">
+        ///     <item>an It.Is* Moq construct: logger => logger.LogInformation(It.IsAny&lt;string&gt;()</item>
+        ///     <item>a constant: logger => logger.LogInformation("Test message")</item>
+        /// </list>
+        /// When the message argument is provided as a constant in the expression, then VerifyLog expects for the following scenarios:
+        /// <list type="bullet">
+        ///     <item>it can assume the message is the formatted one, like "Processed { Latitude = 25, Longitude = 134 } in 034 ms.". If so, VerifyLog transforms each ILogger.Log invocation and compares the result with the given message</item>
+        ///     <item>it can assume the message is the actual message format, like "Processed {@Position} in {Elapsed:000} ms.". If so, it compares the message with the message formats encountered during each ILogger.Log invocation and also evaluates the invocations arguments to be as the ones provided in the VerifyLog expression</item>
+        ///     <item>it can interpret wildcard messages, like "Processed { Latitude = *, Longitude = * } in * ms." or "Processed {@Position}*{Elapsed:000} ms.". If so, it compares the wildcard message with either the messages formats or the transformed messages encountered during each ILogger.Log invocation. When the message is the actual format and the format arguments are provided, then these are compared too.</item>
+        /// </list>
+        /// </remarks>
         public static void VerifyLog(this Mock<ILogger> loggerMock, Expression<Action<ILogger>> expression, Times times)
             => Verify(loggerMock, expression, times, null, null);
 
@@ -53,7 +91,7 @@ namespace Moq
         /// Verifies that a specific invocation matching the given expression was performed on the ILogger mock.
         /// </summary>
         /// <param name="loggerMock">The generic ILogger mock object.</param>
-        /// <param name="expression">Expression to verify.</param>
+        /// <param name="expression">Expression to verify. See the remarks section for the supported expressions.</param>
         /// <param name="times">The number of times a method is expected to be called.</param>
         /// <param name="failMessage">Message to show if verification fails.</param>
         /// <exception cref="VerifyLogException">
@@ -62,6 +100,25 @@ namespace Moq
         /// <exception cref="NotSupportedException">
         /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
         /// </exception>
+        /// <example>
+        /// <code>
+        ///     loggerMock.VerifyLog(logger =&gt; logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms."));
+        /// </code>
+        /// </example>
+        /// <remarks>
+        /// VerifyLog can interpret only .NET Core ILogger extensions, thus the expression argument must contain only LogInformation/LogDebug, etc calls.
+        /// Any argument in the method call expression can be expressed as:
+        /// <list type="bullet">
+        ///     <item>an It.Is* Moq construct: logger => logger.LogInformation(It.IsAny&lt;string&gt;()</item>
+        ///     <item>a constant: logger => logger.LogInformation("Test message")</item>
+        /// </list>
+        /// When the message argument is provided as a constant in the expression, then VerifyLog expects for the following scenarios:
+        /// <list type="bullet">
+        ///     <item>it can assume the message is the formatted one, like "Processed { Latitude = 25, Longitude = 134 } in 034 ms.". If so, VerifyLog transforms each ILogger.Log invocation and compares the result with the given message</item>
+        ///     <item>it can assume the message is the actual message format, like "Processed {@Position} in {Elapsed:000} ms.". If so, it compares the message with the message formats encountered during each ILogger.Log invocation and also evaluates the invocations arguments to be as the ones provided in the VerifyLog expression</item>
+        ///     <item>it can interpret wildcard messages, like "Processed { Latitude = *, Longitude = * } in * ms." or "Processed {@Position}*{Elapsed:000} ms.". If so, it compares the wildcard message with either the messages formats or the transformed messages encountered during each ILogger.Log invocation. When the message is the actual format and the format arguments are provided, then these are compared too.</item>
+        /// </list>
+        /// </remarks>
         public static void VerifyLog(this Mock<ILogger> loggerMock, Expression<Action<ILogger>> expression, Times times, string failMessage)
             => Verify(loggerMock, expression, times, null, failMessage);
 
@@ -69,7 +126,7 @@ namespace Moq
         /// Verifies that a specific invocation matching the given expression was performed on the ILogger mock.
         /// </summary>
         /// <param name="loggerMock">The generic ILogger mock object.</param>
-        /// <param name="expression">Expression to verify.</param>
+        /// <param name="expression">Expression to verify. See the remarks section for the supported expressions.</param>
         /// <param name="times">The number of times a method is expected to be called.</param>
         /// <exception cref="VerifyLogException">
         /// The invocation was not performed on the ILogger mock.
@@ -77,6 +134,25 @@ namespace Moq
         /// <exception cref="NotSupportedException">
         /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
         /// </exception>
+        /// <example>
+        /// <code>
+        ///     loggerMock.VerifyLog(logger =&gt; logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms."));
+        /// </code>
+        /// </example>
+        /// <remarks>
+        /// VerifyLog can interpret only .NET Core ILogger extensions, thus the expression argument must contain only LogInformation/LogDebug, etc calls.
+        /// Any argument in the method call expression can be expressed as:
+        /// <list type="bullet">
+        ///     <item>an It.Is* Moq construct: logger => logger.LogInformation(It.IsAny&lt;string&gt;()</item>
+        ///     <item>a constant: logger => logger.LogInformation("Test message")</item>
+        /// </list>
+        /// When the message argument is provided as a constant in the expression, then VerifyLog expects for the following scenarios:
+        /// <list type="bullet">
+        ///     <item>it can assume the message is the formatted one, like "Processed { Latitude = 25, Longitude = 134 } in 034 ms.". If so, VerifyLog transforms each ILogger.Log invocation and compares the result with the given message</item>
+        ///     <item>it can assume the message is the actual message format, like "Processed {@Position} in {Elapsed:000} ms.". If so, it compares the message with the message formats encountered during each ILogger.Log invocation and also evaluates the invocations arguments to be as the ones provided in the VerifyLog expression</item>
+        ///     <item>it can interpret wildcard messages, like "Processed { Latitude = *, Longitude = * } in * ms." or "Processed {@Position}*{Elapsed:000} ms.". If so, it compares the wildcard message with either the messages formats or the transformed messages encountered during each ILogger.Log invocation. When the message is the actual format and the format arguments are provided, then these are compared too.</item>
+        /// </list>
+        /// </remarks>
         public static void VerifyLog(this Mock<ILogger> loggerMock, Expression<Action<ILogger>> expression, Func<Times> times)
             => Verify(loggerMock, expression, null, times, null);
 
@@ -84,7 +160,7 @@ namespace Moq
         /// Verifies that a specific invocation matching the given expression was performed on the ILogger mock.
         /// </summary>
         /// <param name="loggerMock">The generic ILogger mock object.</param>
-        /// <param name="expression">Expression to verify.</param>
+        /// <param name="expression">Expression to verify. See the remarks section for the supported expressions.</param>
         /// <param name="times">The number of times a method is expected to be called.</param>
         /// <param name="failMessage">Message to show if verification fails.</param>
         /// <exception cref="VerifyLogException">
@@ -93,6 +169,25 @@ namespace Moq
         /// <exception cref="NotSupportedException">
         /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
         /// </exception>
+        /// <example>
+        /// <code>
+        ///     loggerMock.VerifyLog(logger =&gt; logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms."));
+        /// </code>
+        /// </example>
+        /// <remarks>
+        /// VerifyLog can interpret only .NET Core ILogger extensions, thus the expression argument must contain only LogInformation/LogDebug, etc calls.
+        /// Any argument in the method call expression can be expressed as:
+        /// <list type="bullet">
+        ///     <item>an It.Is* Moq construct: logger => logger.LogInformation(It.IsAny&lt;string&gt;()</item>
+        ///     <item>a constant: logger => logger.LogInformation("Test message")</item>
+        /// </list>
+        /// When the message argument is provided as a constant in the expression, then VerifyLog expects for the following scenarios:
+        /// <list type="bullet">
+        ///     <item>it can assume the message is the formatted one, like "Processed { Latitude = 25, Longitude = 134 } in 034 ms.". If so, VerifyLog transforms each ILogger.Log invocation and compares the result with the given message</item>
+        ///     <item>it can assume the message is the actual message format, like "Processed {@Position} in {Elapsed:000} ms.". If so, it compares the message with the message formats encountered during each ILogger.Log invocation and also evaluates the invocations arguments to be as the ones provided in the VerifyLog expression</item>
+        ///     <item>it can interpret wildcard messages, like "Processed { Latitude = *, Longitude = * } in * ms." or "Processed {@Position}*{Elapsed:000} ms.". If so, it compares the wildcard message with either the messages formats or the transformed messages encountered during each ILogger.Log invocation. When the message is the actual format and the format arguments are provided, then these are compared too.</item>
+        /// </list>
+        /// </remarks>
         public static void VerifyLog(this Mock<ILogger> loggerMock, Expression<Action<ILogger>> expression, Func<Times> times, string failMessage)
             => Verify(loggerMock, expression, null, times, failMessage);
 
@@ -100,13 +195,32 @@ namespace Moq
         /// Verifies that a specific invocation matching the given expression was performed on the ILogger mock.
         /// </summary>
         /// <param name="loggerMock">The generic ILogger mock object.</param>
-        /// <param name="expression">Expression to verify.</param>
+        /// <param name="expression">Expression to verify. See the remarks section for the supported expressions.</param>
         /// <exception cref="VerifyLogException">
         /// The invocation was not performed on the ILogger mock.
         /// </exception>
         /// <exception cref="NotSupportedException">
         /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
         /// </exception>
+        /// <example>
+        /// <code>
+        ///     loggerMock.VerifyLog(logger =&gt; logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms."));
+        /// </code>
+        /// </example>
+        /// <remarks>
+        /// VerifyLog can interpret only .NET Core ILogger extensions, thus the expression argument must contain only LogInformation/LogDebug, etc calls.
+        /// Any argument in the method call expression can be expressed as:
+        /// <list type="bullet">
+        ///     <item>an It.Is* Moq construct: logger => logger.LogInformation(It.IsAny&lt;string&gt;()</item>
+        ///     <item>a constant: logger => logger.LogInformation("Test message")</item>
+        /// </list>
+        /// When the message argument is provided as a constant in the expression, then VerifyLog expects for the following scenarios:
+        /// <list type="bullet">
+        ///     <item>it can assume the message is the formatted one, like "Processed { Latitude = 25, Longitude = 134 } in 034 ms.". If so, VerifyLog transforms each ILogger.Log invocation and compares the result with the given message</item>
+        ///     <item>it can assume the message is the actual message format, like "Processed {@Position} in {Elapsed:000} ms.". If so, it compares the message with the message formats encountered during each ILogger.Log invocation and also evaluates the invocations arguments to be as the ones provided in the VerifyLog expression</item>
+        ///     <item>it can interpret wildcard messages, like "Processed { Latitude = *, Longitude = * } in * ms." or "Processed {@Position}*{Elapsed:000} ms.". If so, it compares the wildcard message with either the messages formats or the transformed messages encountered during each ILogger.Log invocation. When the message is the actual format and the format arguments are provided, then these are compared too.</item>
+        /// </list>
+        /// </remarks>
         public static void VerifyLog(this Mock<ILogger> loggerMock, Expression<Action<ILogger>> expression)
             => Verify(loggerMock, expression, null, null, null);
 
@@ -115,13 +229,32 @@ namespace Moq
         /// </summary>
         /// <typeparam name="T">The type of the logger category</typeparam>
         /// <param name="loggerMock">The generic ILogger mock object.</param>
-        /// <param name="expression">Expression to verify.</param>
+        /// <param name="expression">Expression to verify. See the remarks section for the supported expressions.</param>
         /// <exception cref="VerifyLogException">
         /// The invocation was not performed on the ILogger mock.
         /// </exception>
         /// <exception cref="NotSupportedException">
         /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
         /// </exception>
+        /// <example>
+        /// <code>
+        ///     loggerMock.VerifyLog(logger =&gt; logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms."));
+        /// </code>
+        /// </example>
+        /// <remarks>
+        /// VerifyLog can interpret only .NET Core ILogger extensions, thus the expression argument must contain only LogInformation/LogDebug, etc calls.
+        /// Any argument in the method call expression can be expressed as:
+        /// <list type="bullet">
+        ///     <item>an It.Is* Moq construct: logger => logger.LogInformation(It.IsAny&lt;string&gt;()</item>
+        ///     <item>a constant: logger => logger.LogInformation("Test message")</item>
+        /// </list>
+        /// When the message argument is provided as a constant in the expression, then VerifyLog expects for the following scenarios:
+        /// <list type="bullet">
+        ///     <item>it can assume the message is the formatted one, like "Processed { Latitude = 25, Longitude = 134 } in 034 ms.". If so, VerifyLog transforms each ILogger.Log invocation and compares the result with the given message</item>
+        ///     <item>it can assume the message is the actual message format, like "Processed {@Position} in {Elapsed:000} ms.". If so, it compares the message with the message formats encountered during each ILogger.Log invocation and also evaluates the invocations arguments to be as the ones provided in the VerifyLog expression</item>
+        ///     <item>it can interpret wildcard messages, like "Processed { Latitude = *, Longitude = * } in * ms." or "Processed {@Position}*{Elapsed:000} ms.". If so, it compares the wildcard message with either the messages formats or the transformed messages encountered during each ILogger.Log invocation. When the message is the actual format and the format arguments are provided, then these are compared too.</item>
+        /// </list>
+        /// </remarks>
         public static void VerifyLog<T>(this Mock<ILogger<T>> loggerMock, Expression<Action<ILogger>> expression)
             => Verify(loggerMock, expression, null, null, null);
 
@@ -130,7 +263,7 @@ namespace Moq
         /// </summary>
         /// <typeparam name="T">The type of the logger category</typeparam>
         /// <param name="loggerMock">The generic ILogger mock object.</param>
-        /// <param name="expression">Expression to verify.</param>
+        /// <param name="expression">Expression to verify. See the remarks section for the supported expressions.</param>
         /// <param name="failMessage">Message to show if verification fails.</param>
         /// <exception cref="VerifyLogException">
         /// The invocation was not performed on the ILogger mock.
@@ -138,6 +271,25 @@ namespace Moq
         /// <exception cref="NotSupportedException">
         /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
         /// </exception>
+        /// <example>
+        /// <code>
+        ///     loggerMock.VerifyLog(logger =&gt; logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms."));
+        /// </code>
+        /// </example>
+        /// <remarks>
+        /// VerifyLog can interpret only .NET Core ILogger extensions, thus the expression argument must contain only LogInformation/LogDebug, etc calls.
+        /// Any argument in the method call expression can be expressed as:
+        /// <list type="bullet">
+        ///     <item>an It.Is* Moq construct: logger => logger.LogInformation(It.IsAny&lt;string&gt;()</item>
+        ///     <item>a constant: logger => logger.LogInformation("Test message")</item>
+        /// </list>
+        /// When the message argument is provided as a constant in the expression, then VerifyLog expects for the following scenarios:
+        /// <list type="bullet">
+        ///     <item>it can assume the message is the formatted one, like "Processed { Latitude = 25, Longitude = 134 } in 034 ms.". If so, VerifyLog transforms each ILogger.Log invocation and compares the result with the given message</item>
+        ///     <item>it can assume the message is the actual message format, like "Processed {@Position} in {Elapsed:000} ms.". If so, it compares the message with the message formats encountered during each ILogger.Log invocation and also evaluates the invocations arguments to be as the ones provided in the VerifyLog expression</item>
+        ///     <item>it can interpret wildcard messages, like "Processed { Latitude = *, Longitude = * } in * ms." or "Processed {@Position}*{Elapsed:000} ms.". If so, it compares the wildcard message with either the messages formats or the transformed messages encountered during each ILogger.Log invocation. When the message is the actual format and the format arguments are provided, then these are compared too.</item>
+        /// </list>
+        /// </remarks>
         public static void VerifyLog<T>(this Mock<ILogger<T>> loggerMock, Expression<Action<ILogger>> expression, string failMessage)
             => Verify(loggerMock, expression, null, null, failMessage);
 
@@ -146,7 +298,7 @@ namespace Moq
         /// </summary>
         /// <typeparam name="T">The type of the logger category</typeparam>
         /// <param name="loggerMock">The generic ILogger mock object.</param>
-        /// <param name="expression">Expression to verify.</param>
+        /// <param name="expression">Expression to verify. See the remarks section for the supported expressions.</param>
         /// <param name="times">The number of times a method is expected to be called.</param>
         /// <exception cref="VerifyLogException">
         /// The invocation was not performed on the ILogger mock.
@@ -162,7 +314,7 @@ namespace Moq
         /// </summary>
         /// <typeparam name="T">The type of the logger category</typeparam>
         /// <param name="loggerMock">The generic ILogger mock object.</param>
-        /// <param name="expression">Expression to verify.</param>
+        /// <param name="expression">Expression to verify. See the remarks section for the supported expressions.</param>
         /// <param name="times">The number of times a method is expected to be called.</param>
         /// <param name="failMessage">Message to show if verification fails.</param>
         /// <exception cref="VerifyLogException">
@@ -171,6 +323,25 @@ namespace Moq
         /// <exception cref="NotSupportedException">
         /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
         /// </exception>
+        /// <example>
+        /// <code>
+        ///     loggerMock.VerifyLog(logger =&gt; logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms."));
+        /// </code>
+        /// </example>
+        /// <remarks>
+        /// VerifyLog can interpret only .NET Core ILogger extensions, thus the expression argument must contain only LogInformation/LogDebug, etc calls.
+        /// Any argument in the method call expression can be expressed as:
+        /// <list type="bullet">
+        ///     <item>an It.Is* Moq construct: logger => logger.LogInformation(It.IsAny&lt;string&gt;()</item>
+        ///     <item>a constant: logger => logger.LogInformation("Test message")</item>
+        /// </list>
+        /// When the message argument is provided as a constant in the expression, then VerifyLog expects for the following scenarios:
+        /// <list type="bullet">
+        ///     <item>it can assume the message is the formatted one, like "Processed { Latitude = 25, Longitude = 134 } in 034 ms.". If so, VerifyLog transforms each ILogger.Log invocation and compares the result with the given message</item>
+        ///     <item>it can assume the message is the actual message format, like "Processed {@Position} in {Elapsed:000} ms.". If so, it compares the message with the message formats encountered during each ILogger.Log invocation and also evaluates the invocations arguments to be as the ones provided in the VerifyLog expression</item>
+        ///     <item>it can interpret wildcard messages, like "Processed { Latitude = *, Longitude = * } in * ms." or "Processed {@Position}*{Elapsed:000} ms.". If so, it compares the wildcard message with either the messages formats or the transformed messages encountered during each ILogger.Log invocation. When the message is the actual format and the format arguments are provided, then these are compared too.</item>
+        /// </list>
+        /// </remarks>
         public static void VerifyLog<T>(this Mock<ILogger<T>> loggerMock, Expression<Action<ILogger>> expression, Times times, string failMessage)
             => Verify(loggerMock, expression, times, null, failMessage);
 
@@ -180,7 +351,7 @@ namespace Moq
         /// </summary>
         /// <typeparam name="T">The type of the logger category</typeparam>
         /// <param name="loggerMock">The generic ILogger mock object.</param>
-        /// <param name="expression">Expression to verify.</param>
+        /// <param name="expression">Expression to verify. See the remarks section for the supported expressions.</param>
         /// <param name="times">The number of times a method is expected to be called.</param>
         /// <exception cref="VerifyLogException">
         /// The invocation was not performed on the ILogger mock.
@@ -188,6 +359,25 @@ namespace Moq
         /// <exception cref="NotSupportedException">
         /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
         /// </exception>
+        /// <example>
+        /// <code>
+        ///     loggerMock.VerifyLog(logger =&gt; logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms."));
+        /// </code>
+        /// </example>
+        /// <remarks>
+        /// VerifyLog can interpret only .NET Core ILogger extensions, thus the expression argument must contain only LogInformation/LogDebug, etc calls.
+        /// Any argument in the method call expression can be expressed as:
+        /// <list type="bullet">
+        ///     <item>an It.Is* Moq construct: logger => logger.LogInformation(It.IsAny&lt;string&gt;()</item>
+        ///     <item>a constant: logger => logger.LogInformation("Test message")</item>
+        /// </list>
+        /// When the message argument is provided as a constant in the expression, then VerifyLog expects for the following scenarios:
+        /// <list type="bullet">
+        ///     <item>it can assume the message is the formatted one, like "Processed { Latitude = 25, Longitude = 134 } in 034 ms.". If so, VerifyLog transforms each ILogger.Log invocation and compares the result with the given message</item>
+        ///     <item>it can assume the message is the actual message format, like "Processed {@Position} in {Elapsed:000} ms.". If so, it compares the message with the message formats encountered during each ILogger.Log invocation and also evaluates the invocations arguments to be as the ones provided in the VerifyLog expression</item>
+        ///     <item>it can interpret wildcard messages, like "Processed { Latitude = *, Longitude = * } in * ms." or "Processed {@Position}*{Elapsed:000} ms.". If so, it compares the wildcard message with either the messages formats or the transformed messages encountered during each ILogger.Log invocation. When the message is the actual format and the format arguments are provided, then these are compared too.</item>
+        /// </list>
+        /// </remarks>
         public static void VerifyLog<T>(this Mock<ILogger<T>> loggerMock, Expression<Action<ILogger>> expression, Func<Times> times)
             => Verify(loggerMock, expression, null, times, null);
 
@@ -196,7 +386,7 @@ namespace Moq
         /// </summary>
         /// <typeparam name="T">The type of the logger category</typeparam>
         /// <param name="loggerMock">The generic ILogger mock object.</param>
-        /// <param name="expression">Expression to verify.</param>
+        /// <param name="expression">Expression to verify. See the remarks section for the supported expressions.</param>
         /// <param name="times">The number of times a method is expected to be called.</param>
         /// <param name="failMessage">Message to show if verification fails.</param>
         /// <exception cref="VerifyLogException">
@@ -205,6 +395,25 @@ namespace Moq
         /// <exception cref="NotSupportedException">
         /// The invocation expression was not defined for one of the logging extensions as defined in the <see href="https://docs.microsoft.com/en-us/dotnet/api/microsoft.extensions.logging.loggerextensions"><see cref="LoggerExtensions"/> class</see> from the <see href="https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/">Microsoft.Extensions.Logging.Abstractions</see> package.
         /// </exception>
+        /// <example>
+        /// <code>
+        ///     loggerMock.VerifyLog(logger =&gt; logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms."));
+        /// </code>
+        /// </example>
+        /// <remarks>
+        /// VerifyLog can interpret only .NET Core ILogger extensions, thus the expression argument must contain only LogInformation/LogDebug, etc calls.
+        /// Any argument in the method call expression can be expressed as:
+        /// <list type="bullet">
+        ///     <item>an It.Is* Moq construct: logger => logger.LogInformation(It.IsAny&lt;string&gt;()</item>
+        ///     <item>a constant: logger => logger.LogInformation("Test message")</item>
+        /// </list>
+        /// When the message argument is provided as a constant in the expression, then VerifyLog expects for the following scenarios:
+        /// <list type="bullet">
+        ///     <item>it can assume the message is the formatted one, like "Processed { Latitude = 25, Longitude = 134 } in 034 ms.". If so, VerifyLog transforms each ILogger.Log invocation and compares the result with the given message</item>
+        ///     <item>it can assume the message is the actual message format, like "Processed {@Position} in {Elapsed:000} ms.". If so, it compares the message with the message formats encountered during each ILogger.Log invocation and also evaluates the invocations arguments to be as the ones provided in the VerifyLog expression</item>
+        ///     <item>it can interpret wildcard messages, like "Processed { Latitude = *, Longitude = * } in * ms." or "Processed {@Position}*{Elapsed:000} ms.". If so, it compares the wildcard message with either the messages formats or the transformed messages encountered during each ILogger.Log invocation. When the message is the actual format and the format arguments are provided, then these are compared too.</item>
+        /// </list>
+        /// </remarks>
         public static void VerifyLog<T>(this Mock<ILogger<T>> loggerMock, Expression<Action<ILogger>> expression, Func<Times> times, string failMessage)
             => Verify(loggerMock, expression, null, times, failMessage);
         #endregion
@@ -281,10 +490,10 @@ namespace Moq
         private static Expression CreateLogLevelExpression(VerifyLogExpression verifyLogExpression)
             => Expression.Constant(verifyLogExpression.Args.LogLevel);
 
-        private static Expression CreateFormatterExpression() 
+        private static Expression CreateFormatterExpression()
             => Expression.Convert(BuildItIsAnyExpression<object>(), typeof(Func<It.IsAnyType, Exception, string>));
 
-        private static Expression CreateEventIdExpression(VerifyLogExpression verifyLogExpression) 
+        private static Expression CreateEventIdExpression(VerifyLogExpression verifyLogExpression)
             => verifyLogExpression.EventIdExpression ?? BuildItIsAnyExpression<EventId>();
 
         private static Expression CreateExceptionExpression(VerifyLogExpression verifyLogExpression)
