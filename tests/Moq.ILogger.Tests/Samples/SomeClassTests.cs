@@ -23,6 +23,15 @@ namespace Moq.Tests.Samples
 
             _logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
         }
+
+        public void MultipleLoggingCalls()
+        {
+            var position = new { Latitude = 25, Longitude = 134 };
+            var elapsedMs = 34;
+
+            _logger.LogInformation("Processed {@Position} in {Elapsed:000} ms with success.", position, elapsedMs);
+            _logger.LogInformation("Processed {@Position} in {Elapsed:000} ms with failure.", position, elapsedMs);
+        }
     }
 
     public class SomeClassTests
@@ -80,6 +89,18 @@ namespace Moq.Tests.Samples
 
             loggerMock.VerifyLog(logger => logger.LogInformation("Processed * in * ms.", It.IsAny<It.IsAnyType>(), It.IsAny<int>()));
             loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position}*{Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, 34));
+        }
+
+        [Fact]
+        public void Verify_multiple_logging_calls()
+        {
+            var loggerMock = new Mock<ILogger<SomeClass>>();
+            var sut = new SomeClass(loggerMock.Object);
+
+            sut.MultipleLoggingCalls();
+
+            loggerMock.VerifyLog(logger => logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms with failure."));
+            loggerMock.VerifyLog(logger => logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms with*"), Times.Exactly(2));
         }
     }
 }
