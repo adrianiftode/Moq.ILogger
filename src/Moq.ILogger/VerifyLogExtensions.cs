@@ -579,7 +579,7 @@ namespace Moq
                             case "IsRegex":
                                 {
                                     // build (v, t) => Regex.IsMatch(v.ToString(), pattern, RegexOptions.IgnoreCase)
-                                    var pattern = ((ConstantExpression)methodCallExpression.Arguments[0]).Value;
+                                    var pattern = Expression.Lambda(methodCallExpression.Arguments[0]).Compile().DynamicInvoke();
                                     var patternConstantExpression = Expression.Constant(pattern);
                                     var regexOptionsConstantExpression = Expression.Constant(RegexOptions.IgnoreCase);
                                     var vParamToStringExpression = CreatevParamToStringExpression();

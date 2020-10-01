@@ -556,6 +556,18 @@ namespace Moq.Tests
         }
 
         [Fact]
+        public void Verify_it_is_regex_with_method_call_it_verifies()
+        {
+            var loggerMock = new Mock<ILogger>();
+            loggerMock.Object.LogInformation("Test message");
+
+            Action act = () => loggerMock.VerifyLog(c => c.LogInformation(It.IsRegex(GetRegex())));
+
+            act.Should().NotThrow();
+        }
+        string GetRegex() => "^(.*)$";
+
+        [Fact]
         public void Verify_it_is_regex_when_message_does_not_match_the_regex_it_throws()
         {
             var loggerMock = new Mock<ILogger>();
