@@ -157,6 +157,18 @@ namespace Moq.Tests
         }
 
         [Fact]
+        public void Verify_a_multiline_message_against_wildcard_it_verifies()
+        {
+            var loggerMock = new Mock<ILogger>();
+            loggerMock.Object.LogInformation(@"The configuration doesn't define any stages to run.
+            Please make sure that at least one stage is set to run.");
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("*configuration*"));
+
+            act.Should().NotThrow();
+        }
+
+        [Fact]
         public void Verify_a_message_that_is_part_of_the_log_message_it_throws()
         {
             var loggerMock = new Mock<ILogger>();

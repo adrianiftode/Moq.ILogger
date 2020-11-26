@@ -19,7 +19,7 @@ namespace Moq
             }
 
             var pattern = WildcardToRegular(wildcard);
-            return Regex.IsMatch(source, pattern, RegexOptions.IgnoreCase);
+            return Regex.IsMatch(source, pattern, RegexOptions.IgnoreCase | RegexOptions.Multiline);
 
             static string WildcardToRegular(string value)
                 => "^" + Regex.Escape(value).Replace("\\?", ".").Replace("\\*", ".*") + "$";
