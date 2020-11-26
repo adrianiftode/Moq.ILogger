@@ -437,8 +437,10 @@ namespace Moq
                     {
                         loggerMock.Verify(verifyExpression, times.Value, failMessage);
                     }
-
-                    loggerMock.Verify(verifyExpression, failMessage);
+                    else
+                    {
+                        loggerMock.Verify(verifyExpression, failMessage);
+                    }
                 }
                 catch (MockException ex)
                 {

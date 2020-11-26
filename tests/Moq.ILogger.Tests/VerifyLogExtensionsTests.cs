@@ -811,6 +811,28 @@ namespace Moq.Tests
                 .WithMessage("*Expected invocation on the mock at least 2 times, but was 1 time*")
                 .WithMessage("*We expect to log `Test message` at least twice.*");
         }
+
+        [Fact]
+        public void Verify_uses_Times_Never()
+        {
+            var loggerMock = new Mock<ILogger<object>>();
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogDebug("Test message"), Times.Never());
+
+            act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Verify_includes_the_fail_message_with_Times_Never()
+        {
+            var loggerMock = new Mock<ILogger<object>>();
+            loggerMock.Object.LogDebug("Test message");
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogDebug("Test message"), Times.Never);
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*Expected invocation on the mock should never have been performed, but was 1 time*");
+        }
     }
 
     internal static class OtherExtensions
