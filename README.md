@@ -37,7 +37,7 @@ public class SomeClass
 }
 ```
 
-Then interactions like the ones bellow can be asserted:
+Then interactions like the ones below can be asserted:
 
 ```csharp
 [Fact]
