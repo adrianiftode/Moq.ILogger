@@ -300,6 +300,32 @@ namespace Moq.Tests
         }
 
         [Fact]
+        public void Verify_a_message_using_wildcards_with_interpolated_message_it_verifies()
+        {
+            var loggerMock = new Mock<ILogger<object>>();
+            var interpolatedMessageArg = "Arg";
+            loggerMock.Object.LogInformation($"Test message {interpolatedMessageArg}");
+
+            Action act = () => loggerMock.VerifyLog(c => c.LogInformation($"*{interpolatedMessageArg}*"));
+
+            act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Verify_a_message_using_wildcards_with_interpolated_message_it_throws()
+        {
+            var loggerMock = new Mock<ILogger<object>>();
+            var interpolatedMessageArg1 = "Arg 1";
+            var interpolatedMessageArg2 = "Arg 2";
+            loggerMock.Object.LogInformation($"Test message {interpolatedMessageArg1}");
+
+            Action act = () => loggerMock.VerifyLog(c => c.LogInformation($"*{interpolatedMessageArg2}*"));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*.LogInformation*");
+        }
+
+        [Fact]
         public void Verify_a_structured_message_when_parameters_differ_it_throws()
         {
             var loggerMock = new Mock<ILogger>();
@@ -390,9 +416,35 @@ namespace Moq.Tests
 
             act.Should().ThrowExactly<VerifyLogException>()
                 .WithMessage("*.LogInformation(VerifyLogExtensionsTests.GetNotAMessage(), new[] {  })*")
-                .Which.InnerException!.Message.Should().Match("*logger => logger.Log<It.IsAnyType>(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => VerifyLogExtensions.CompareMessages(v.ToString(), VerifyLogExpression, \"Not a test message\")), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
+                .Which.InnerException!.Message.Should().Match("*logger => logger.Log<It.IsAnyType>(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => VerifyLogExtensions.CompareMessages(\"Not a test message\", VerifyLogExpression, v.ToString())), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
         }
         string GetNotAMessage() => "Not a test message";
+
+        [Fact]
+        public void Verify_a_wildcard_message_with_method_call_it_verifies()
+        {
+            var loggerMock = new Mock<ILogger<object>>();
+            loggerMock.Object.LogInformation("Test message");
+
+            Action act = () => loggerMock.VerifyLog(c => c.LogInformation(GetWildcardMessage()));
+
+            act.Should().NotThrow();
+        }
+        string GetWildcardMessage() => "*message*";
+
+        [Fact]
+        public void Verify_a_wildcard_message_with_a_different_one_from_a_method_call_it_throws()
+        {
+            var loggerMock = new Mock<ILogger<object>>();
+            loggerMock.Object.LogInformation("Test message");
+
+            Action act = () => loggerMock.VerifyLog(c => c.LogInformation(GetWildcardNotAMessage()));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*.LogInformation(VerifyLogExtensionsTests.GetWildcardNotAMessage(), new[] {  })*")
+                .Which.InnerException!.Message.Should().Match("*logger => logger.Log<It.IsAnyType>(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => VerifyLogExtensions.CompareMessages(\"*no match*\", VerifyLogExpression, v.ToString())), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
+        }
+        string GetWildcardNotAMessage() => "*no match*";
 
         [Fact]
         public void Verify_a_message_one_constructed_call_it_throws()
@@ -404,7 +456,7 @@ namespace Moq.Tests
 
             act.Should().ThrowExactly<VerifyLogException>()
                 .WithMessage("*.LogInformation(new string(new[] { a }), new[] {  })*")
-                .Which.InnerException!.Message.Should().Match("*logger => logger.Log<It.IsAnyType>(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => VerifyLogExtensions.CompareMessages(v.ToString(), VerifyLogExpression, \"a\")), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
+                .Which.InnerException!.Message.Should().Match("*logger => logger.Log<It.IsAnyType>(LogLevel.Information, It.IsAny<EventId>(), It.Is<It.IsAnyType>((v, t) => VerifyLogExtensions.CompareMessages(\"a\", VerifyLogExpression, v.ToString())), It.IsAny<Exception>(), (Func<It.IsAnyType, Exception, string>)It.IsAny<object>())*");
         }
 
         [Fact]
