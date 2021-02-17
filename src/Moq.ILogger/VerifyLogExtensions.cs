@@ -617,7 +617,7 @@ namespace Moq
                 var verifyLogConstantExpression = Expression.Constant(verifyLogExpression, typeof(VerifyLogExpression));
 
                 var compareMessagesCallExpression = Expression.Call(typeof(VerifyLogExtensions), nameof(CompareMessages), null,
-                    vParamToStringExpression, verifyLogConstantExpression, methodCallExpression);
+                    methodCallExpression, verifyLogConstantExpression, vParamToStringExpression);
                 compareExpression = Expression.Lambda<Func<object, Type, bool>>(compareMessagesCallExpression, vParam, tParam);
                 return compareExpression;
             }

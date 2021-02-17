@@ -16,6 +16,9 @@ namespace Moq.Tests.Samples
         public void LoggingWarning(string name)
             => _logger.LogWarning(new ArgumentException("The given name is not ok", nameof(name)), "This operation failed, but let's log an warning only");
 
+        public void LoggingError(string name)
+            => _logger.LogError(new ArgumentException("The given name is not ok", nameof(name)), $"This operation failed for name {name}");
+
         public void SemanticLogging()
         {
             var position = new { Latitude = 25, Longitude = 134 };
@@ -45,7 +48,7 @@ namespace Moq.Tests.Samples
             sut.LoggingInformation();
 
             loggerMock.VerifyLog(logger => logger.LogInformation("This operation is successful."));
-            loggerMock.VerifyLog(logger => logger.LogInformation((EventId)0,"This operation is successful."));
+            loggerMock.VerifyLog(logger => logger.LogInformation((EventId)0, "This operation is successful."));
             loggerMock.VerifyLog(logger => logger.LogInformation("This * is successful."));
             loggerMock.VerifyLog(logger => logger.LogInformation(It.Is<string>(msg => msg.Length > 5)));
             loggerMock.VerifyLog(logger => logger.LogInformation(It.IsAny<string>()));
@@ -68,6 +71,18 @@ namespace Moq.Tests.Samples
             loggerMock.VerifyLog(logger => logger.LogWarning(It.IsAny<EventId>(), It.IsAny<ArgumentException>(), "*failed*"));
             // ReSharper disable once NotResolvedInText
             loggerMock.VerifyLog(logger => logger.LogWarning(It.IsAny<EventId>(), new ArgumentException("The given name is not ok", "name"), "*failed*"));
+        }
+
+        [Fact]
+        public void Verify_exceptions_logged_as_errors()
+        {
+            var name = "Adrian";
+            var loggerMock = new Mock<ILogger<SomeClass>>();
+            var sut = new SomeClass(loggerMock.Object);
+
+            sut.LoggingError(name);
+
+            loggerMock.VerifyLog(logger => logger.LogError(It.Is<ArgumentException>(ex => ex.ParamName == "name"), $"*{name}*"));
         }
 
         [Fact]
