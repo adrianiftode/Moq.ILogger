@@ -462,7 +462,7 @@ namespace Moq
                               Environment.NewLine +
                               "Please open an issue at https://github.com/adrianiftode/Moq.ILogger/issues/new, provide the exception details and a sample code if possible." +
                               Environment.NewLine +
-                              "Bellow will follow the unexpected exception details." +
+                              "Below will follow the unexpected exception details." +
                               Environment.NewLine;
                 throw new VerifyLogUnexpectedException(message, exception);
             }
@@ -773,37 +773,39 @@ namespace Moq
 
         private static bool MessageArgsMatch(Expression expectedMessageArgsExpression, object[] actualArgs)
         {
+            // Executes Moq specific code that evaluates if an object matches the description of an Expression.
+            // In our case we need to see if the actualArgs passed into the formatter have the specified properties as described by expectedMessageArgsExpression:
+            //
+            // var (matcher, _) = MatcherFactory.CreateMatcher(expr, actualArgsParameter);
+            // var isMatch = matcher.Matches(actualArgs, typeof(object[]));
+
+            // MatcherFactory and Match types are internal to Moq so this goal is achieved using reflection. 
+            //
             // see this Test for reference https://github.com/moq/moq4/blob/61f420f3d44527ce652883ce857fc8b3bdabafca/tests/Moq.Tests/Matchers/ParamArrayMatcherFixture.cs#L19
 
-            // create Expression<> _ = x => x.Method(expectedMessageArgsExpression);
-            //
-
+            // create Expression<Action<IX>> _ = x => x.Method(args);
             var xParameter = Expression.Parameter(typeof(IX), "x");
-            var instance = Expression.Constant(new X(), typeof(IX));
+            var instance = Expression.Constant(null, typeof(IX));
             var methodCallExpression = Expression.Call(instance, typeof(IX).GetMethod("Method")!, expectedMessageArgsExpression);
             var methodCallLambda = Expression.Lambda(methodCallExpression, xParameter);
-            var parameter = typeof(IX).GetMethod("Method")!.GetParameters().Single();
 
             // Execute the following Moq code
-            //          var (matcher, _) = MatcherFactory.CreateMatcher(expr, parameter);
-            //          matcher.Matches(actualArgs, typeof(object[]))
-            //
-
+            //          var (matcher, _) = MatcherFactory.CreateMatcher(expr, argsParameter);
             var matcherFactoryType = typeof(Mock).Assembly.GetTypes().First(c => c.Name == "MatcherFactory");
             var createMatcherMethod =
                 matcherFactoryType.GetMethod("CreateMatcher", BindingFlags.Static | BindingFlags.Public, null, new[] { typeof(Expression), typeof(ParameterInfo) }, null);
 
-            // result is typeof(Pair<IMatcher, Expression>); Pair is a type from Moq, having two fields Item1, Item2
+            var argsParameter = typeof(IX).GetMethod("Method")!.GetParameters()[0];
+            var matcherResult = createMatcherMethod!.Invoke(null, new object[] { ((MethodCallExpression)methodCallLambda.Body).Arguments[0], argsParameter });
+            // matcherResult is typeof(Pair<IMatcher, Expression>); Pair is a type from Moq, having two fields Item1, Item2
             // we need Item1
-            var matcherResult = createMatcherMethod!.Invoke(null, new object[] { ((MethodCallExpression)methodCallLambda.Body).Arguments.Single(), parameter });
-            var resultType = matcherResult.GetType();
-            var matcherField = resultType.GetField("Item1");
-            var matcher = matcherField.GetValue(matcherResult);
-            var matcherType = matcher.GetType();
+            var matcher = matcherResult.GetType().GetField("Item1").GetValue(matcherResult);
 
-            // invoke matcher.Matches(actualArgs, typeof(object[]))
+            // Remaining to execute the second line
+            //            var isMatch = matcher.Matches(actualArgs, typeof(object[]));
+            var matcherType = matcher.GetType();
             var matchesMethod =
-                matcherType.GetMethod("Matches", BindingFlags.Instance | BindingFlags.Public, null, new[] { typeof(object[]), typeof(Type) }, null);
+                matcherType.GetMethod("Matches", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null, new[] { typeof(object[]), typeof(Type) }, null);
             var isMatch = (bool)matchesMethod!.Invoke(matcher, new object[] { actualArgs, typeof(object[]) });
             return isMatch;
         }
@@ -826,5 +828,4 @@ namespace Moq
     }
 
     internal interface IX { void Method(params object[] args); }
-    internal class X : IX { public void Method(params object[] args) { throw new NotSupportedException("This method should never be called, only inspected."); } }
 }
