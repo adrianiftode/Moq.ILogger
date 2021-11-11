@@ -1,7 +1,7 @@
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using System;
 using Xunit;
-using FluentAssertions;
 
 // ReSharper disable once CheckNamespace
 namespace Moq.Tests
@@ -392,6 +392,35 @@ namespace Moq.Tests
 
             act.Should().ThrowExactly<VerifyLogException>()
                 .WithMessage("*.LogInformation*");
+        }
+
+        [Fact]
+        public void Verify_when_args_array_is_matched_it_verifies()
+        {
+            var loggerMock = new Mock<ILogger>();
+            var position = new { Latitude = 25, Longitude = 134 };
+            var elapsedMs = 34;
+            loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.",
+                It.IsAny<object[]>()));
+
+            act.Should().NotThrow();
+        }
+
+        [Fact]
+        public void Verify_when_args_array_is_not_matched_it_throws()
+        {
+            var loggerMock = new Mock<ILogger>();
+            var position = new { Latitude = 25, Longitude = 134 };
+            var elapsedMs = 34;
+            loggerMock.Object.LogInformation("Processed {@Position} in {Elapsed:000} ms.", position, elapsedMs);
+
+            Action act = () => loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.",
+                It.Is<object[]>(o => o == null)));
+
+            act.Should().ThrowExactly<VerifyLogException>()
+                .WithMessage("*Expected invocation on the mock at least once*(o => o == null)*");
         }
 
         [Fact]

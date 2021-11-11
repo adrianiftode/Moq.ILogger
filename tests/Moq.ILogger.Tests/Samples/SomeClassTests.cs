@@ -97,6 +97,7 @@ namespace Moq.Tests.Samples
 
             loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, 34));
             loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", It.IsAny<It.IsAnyType>(), It.IsAny<int>()));
+            loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", It.Is<object[]>(arg => arg != null)));
 
             loggerMock.VerifyLog(logger => logger.LogInformation("Processed { Latitude = *, Longitude = * } in * ms."));
             loggerMock.VerifyLog(logger => logger.LogInformation("Processed * in * ms."));
