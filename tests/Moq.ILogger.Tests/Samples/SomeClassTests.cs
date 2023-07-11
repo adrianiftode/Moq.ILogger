@@ -1,11 +1,12 @@
 using Microsoft.Extensions.Logging;
 using System;
+using System.Linq.Expressions;
 using Xunit;
 
 // ReSharper disable once CheckNamespace
 namespace Moq.Tests.Samples
 {
-    public class SomeClass
+  public class SomeClass
     {
         private readonly ILogger<SomeClass> _logger;
         public SomeClass(ILogger<SomeClass> logger) => _logger = logger;
@@ -35,7 +36,21 @@ namespace Moq.Tests.Samples
             _logger.LogInformation("Processed {@Position} in {Elapsed:000} ms with success.", position, elapsedMs);
             _logger.LogInformation("Processed {@Position} in {Elapsed:000} ms with failure.", position, elapsedMs);
         }
-    }
+
+        public void LoggingWithCustomFormat()
+        {
+          var position = new { Latitude = 25, Longitude = 134 };
+          var elapsedMs = 34;
+
+          _logger.LogInformation(GetMessage(), position, elapsedMs);
+        }
+
+        public static string GetMessage()
+            => "Processed {@Position} in {Elapsed:000} ms.";
+
+        public static string GetOtherMessage()
+          => "Not Processed {@Position} in {Elapsed:000} ms.";
+  }
 
     public class SomeClassTests
     {
@@ -93,6 +108,9 @@ namespace Moq.Tests.Samples
 
             sut.SemanticLogging();
 
+
+            loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", It.Is<object[]>(arg => (int)arg[1] == 34 )));
+
             loggerMock.VerifyLog(logger => logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms."));
 
             loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, 34));
@@ -117,6 +135,51 @@ namespace Moq.Tests.Samples
 
             loggerMock.VerifyLog(logger => logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms with failure."));
             loggerMock.VerifyLog(logger => logger.LogInformation("Processed { Latitude = 25, Longitude = 134 } in 034 ms with*"), Times.Exactly(2));
+        }
+
+        [Fact]
+        public void Verify_Logging_WithCustomFormat()
+        {
+          var loggerMock = new Mock<ILogger<SomeClass>>();
+          var sut = new SomeClass(loggerMock.Object);
+
+          sut.LoggingWithCustomFormat();
+
+          loggerMock.VerifyLog(logger => logger.LogInformation("Processed {@Position} in {Elapsed:000} ms.", new { Latitude = 25, Longitude = 134 }, 34));
+          loggerMock.VerifyLog(logger => logger.LogInformation(SomeClass.GetMessage(), new { Latitude = 25, Longitude = 134 }, 34));
+          loggerMock.VerifyLog(logger => logger.LogInformation(SomeClass.GetOtherMessage(), new { Latitude = 25, Longitude = 134 }, 34));
+        }
+
+        [Fact]
+        public void Test()
+        {
+          var serviceMock = new Mock<IService>();
+          var sut = new SomeOtherClass(serviceMock.Object);
+
+          sut.GetMessage();
+
+          Expression<Action<IService>> expression = logger => logger.GetMessage("Processed {@Position} in {Elapsed:000} ms.", 1);
+          serviceMock.Verify(expression);
+          serviceMock.Verify(logger => logger.GetMessage(SomeClass.GetMessage(), 1));
+          serviceMock.Verify(logger => logger.GetMessage(SomeClass.GetMessage(), It.IsAny<int>()));
+          serviceMock.Verify(logger => logger.GetMessage(SomeClass.GetOtherMessage(), It.IsAny<int>()));
+        }
+
+        public interface IService
+        {
+            string GetMessage(string argument, int arg2);
+        }
+
+        public class SomeOtherClass
+        {
+          private readonly IService _service;
+
+          public SomeOtherClass(IService service)
+          {
+            _service = service;
+          }
+
+          public string GetMessage() => _service.GetMessage(SomeClass.GetMessage(), 1);
         }
     }
 }

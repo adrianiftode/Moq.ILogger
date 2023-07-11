@@ -436,6 +436,18 @@ namespace Moq.Tests
         string GetMessage() => "Test message";
 
         [Fact]
+        public void Verify_a_message_with_method_call_that_returns_a_format_it_verifies()
+        {
+            var loggerMock = new Mock<ILogger<object>>();
+            loggerMock.Object.LogInformation(GetMessageWithFormat(), 0);
+
+            Action act = () => loggerMock.VerifyLog(c => c.LogInformation(GetMessageWithFormat(), It.IsAny<int>()));
+
+            act.Should().NotThrow();
+        }
+        string GetMessageWithFormat() => "Test message {Id}";
+
+        [Fact]
         public void Verify_a_message_with_a_different_one_from_a_method_call_it_throws()
         {
             var loggerMock = new Mock<ILogger<object>>();

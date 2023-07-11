@@ -703,7 +703,7 @@ namespace Moq
 
             if (!(actualMessageValues is IReadOnlyList<KeyValuePair<string, object>>))
             {
-                return actualMessageFormatted.IsWildcardMatch(expectedMessageFormat);
+              return actualMessageFormatted.IsWildcardMatch(expectedMessageFormat);
             }
 
             var (actualMessageFormat, actualMessageArgs) = ExtractActualMessageFormatAndArgs(actualMessageValues);
