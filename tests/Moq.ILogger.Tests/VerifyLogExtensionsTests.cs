@@ -950,6 +950,15 @@ namespace Moq.Tests
                 .WithMessage("*an error must be logged*")
                 .WithMessage("*Expected invocation on the mock once, but was 0 times*");
         }
+
+        [Fact]
+        public void Verify_log_error_with_an_expected_event_id_and_message_it_fails_with_expected_message_fail_on_purpose()
+        {
+            var loggerMock = new Mock<ILogger<object>>();
+            loggerMock.Object.LogError(50100, "the description of the error goes here");
+
+            loggerMock.VerifyLog(logger => logger.LogError(50200, "the description of the error goes here"), Times.Once(), "an error must be logged");
+        }
     }
 
     internal static class OtherExtensions
