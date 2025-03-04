@@ -1,10 +1,12 @@
-version: 1.1.{build}
-image: Visual Studio 2019
+version: 1.2.{build}
+image: Visual Studio 2022
 branches:
   only:
   - master
+  - /\d+\.\d+\.\d+/
 pull_requests:
-  do_not_increment_build_number: true
+  do_not_increment_build_number: false
+skip_branch_with_pr: true
 configuration: Release
 shallow_clone: true
 
@@ -18,6 +20,23 @@ skip_commits:
 
 init:
   - cmd: dotnet --version
+  - ps: |
+      if ($env:APPVEYOR_REPO_TAG -eq "true")
+      {
+        try
+        {
+           Update-AppveyorBuild -Version "$env:APPVEYOR_REPO_TAG_NAME"
+        }
+        catch
+        {
+           Write-Output "Update-AppveyorBuild Fail to change version to TAG: '$env:APPVEYOR_REPO_TAG_NAME'"   -ForegroundColor Red
+           Write-Output "Exception Error: $PSItem.Exception.Message" -ForegroundColor Red
+           Write-Output "Exception Error: $PSItem.Exception.GetType().Name" -ForegroundColor Red 
+        }
+      }
+  - ps: |
+      Write-Host "APPVEYOR_BUILD_VERSION='$env:APPVEYOR_BUILD_VERSION'" -ForegroundColor Yellow
+      Write-Host "APPVEYOR_REPO_TAG_NAME= '$env:APPVEYOR_REPO_TAG_NAME'" -ForegroundColor Yellow
   - ps: 'if (-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) { & dotnet tool install -g dotnet-sonarscanner }'
   - cmd: dotnet tool install -g minicover
 
@@ -36,22 +55,22 @@ nuget:
 before_build: 
   - dotnet restore
 build_script:
-  # Ensure Java 11, required by Sonar
-  - set JAVA_HOME=C:\Program Files\Java\jdk11
+  # Ensure Java 15, required by Sonar
+  - set JAVA_HOME=C:\Program Files\Java\jdk19
+  - if not exist "%JAVA_HOME%\bin\java.exe" (echo "%JAVA_HOME%\bin\java.exe does not exist" && exit 1)
   - set PATH=%JAVA_HOME%\bin;%PATH%
-  # Begin SonarScanner
-  - ps: 'if (-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) { & dotnet sonarscanner begin /k:"Moq.ILogger" /o:adrianiftode-github /d:sonar.host.url="https://sonarcloud.io" /d:sonar.login="$env:SONAR_TOKEN" /v:"$env:APPVEYOR_BUILD_NUMBER" /d:sonar.cs.opencover.reportsPaths="opencovercoverage.xml" /d:sonar.coverage.exclusions=test/**}'
-  - dotnet build
+  - ps: 'if (-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) { & dotnet sonarscanner begin /k:"adrianiftode_FluentAssertions.Web" /o:adrianiftode-github /d:sonar.host.url="https://sonarcloud.io" /d:sonar.login="$env:SONAR_TOKEN" /v:"$env:APPVEYOR_BUILD_NUMBER" /d:sonar.cs.opencover.reportsPaths="opencovercoverage.xml" /d:sonar.coverage.exclusions=test/**}'
+  - dotnet build -c %CONFIGURATION% /p:Version=%APPVEYOR_BUILD_VERSION%
   - minicover instrument
 test_script:
-  - dotnet test --no-restore --no-build
+  - dotnet test --no-restore --no-build --nologo --verbosity:q
 after_test:
   - minicover uninstrument
   - minicover opencoverreport
   # will fail when the test coverage is lower than the threshold
   - minicover report --threshold 90
   - ps: 'if (-Not $env:APPVEYOR_PULL_REQUEST_NUMBER) { & dotnet sonarscanner end /d:sonar.login="$env:SONAR_TOKEN" }'
-  - dotnet pack --no-restore --include-symbols -c %CONFIGURATION%
+  - dotnet pack --no-build --include-symbols -c %CONFIGURATION% /p:PackageVersion=%APPVEYOR_BUILD_VERSION%
 
 artifacts:
   - path: '**\*.nupkg'
@@ -60,8 +79,16 @@ artifacts:
 deploy:
   - provider: NuGet
     api_key:
-     secure: O+eAN9xt6vbmeNTfpqoQ5c64xbzUCXrZXhJU6/3Vw9BvSn747F9PH5tFtuxEqLTA
+     secure: DbQndcBhytd1c9OjkuTZDytpWBemxjl0eskUAhXO6y4L0TdjH2H6SubzOnWCH7bD
     skip_symbols: true
     artifact: /.*\.nupkg/
-    on: 
-      branch: master
+    on:
+      appveyor_repo_tag: true
+
+  - provider: GitHub
+    release: $(APPVEYOR_BUILD_VERSION)
+    auth_token:
+        secure: WXU/Xj3ntIZVx89KDAa/V9FszL7l3pOFpFdWVEsKggcn7bGviwOOpm9RSxZ7q+biREJXWL+1hYhcXQltmQDbaX7ga5jNMGyFFWpIWSDpb8x+1Aeg10fZX1SEWQ0t6VUr
+    artifact: /.*\.nupkg/
+    on:
+      appveyor_repo_tag: true
