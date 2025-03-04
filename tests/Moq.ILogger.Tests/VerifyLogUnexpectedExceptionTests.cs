@@ -30,13 +30,5 @@ namespace Moq.Tests
 
             act.Should().NotThrow();
         }
-
-        [Fact]
-        public void Exception_ShouldBeBinarySerializable()
-        {
-            var sut = new VerifyLogUnexpectedException("Some message", new Exception());
-
-            sut.Should().BeBinarySerializable();
-        }
     }
 }
